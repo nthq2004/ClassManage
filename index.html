@@ -68,7 +68,19 @@
     </div>
     <div id="student-list"></div>
 </div>
+<div style="margin-top:auto; padding:15px; border-top:1px solid #333;">
+    <a href="#" onclick="showAdminPanel()" style="color:var(--accent); font-size:12px; text-decoration:none;">⚙️ 班级数据管理控制台</a>
+</div>
 
+<div id="admin-modal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.9); z-index:3000; padding:20px; overflow-y:auto;">
+    <div style="background:#fff; color:#333; padding:20px; border-radius:8px; max-width:800px; margin:0 auto;">
+        <div style="display:flex; justify-content:space-between;">
+            <h2>全校仿真数据概览</h2>
+            <button onclick="document.getElementById('admin-modal').style.display='none'">关闭</button>
+        </div>
+        <pre id="admin-content" style="background:#f4f4f4; padding:10px; border-radius:4px; font-size:12px; white-space:pre-wrap;"></pre>
+    </div>
+</div>
 <div id="main">
     <div id="demo-mask"></div>
     <div id="top-bar">
@@ -123,6 +135,26 @@
         location.reload();
     }
 
+    //显示所有数据
+    async function showAdminPanel() {
+    const modal = document.getElementById('admin-modal');
+    const content = document.getElementById('admin-content');
+    modal.style.display = 'block';
+    content.innerText = "正在抓取所有 DO 数据...";
+
+    try {
+        const res = await fetch(`https://${BASE_URL}/admin/all-data`);
+        const data = await res.json();
+        
+        // 格式化展示数据
+        content.innerText = JSON.stringify(data, null, 2);
+        
+        // 如果你想做“处理”功能，可以在这里添加按钮发请求到后端
+        // 例如：重置某个班级的数据
+    } catch (e) {
+        content.innerText = "抓取失败: " + e.message;
+    }
+}
     // 获取班级列表
     async function refreshClassOptions() {
         try {
@@ -240,4 +272,5 @@
 </script>
 </body>
 </html>
+
 
