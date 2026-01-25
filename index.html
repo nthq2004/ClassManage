@@ -2,37 +2,33 @@
 <html>
 <head>
     <meta charset="UTF-8">
-    <title>演示与监控系统 - wangaijun.click</title>
+    <title>仿真系统 - wangaijun.click</title>
     <script src="https://unpkg.com/konva@9/konva.min.js"></script>
     <style>
-        :root { --primary: #3498db; --bg: #1a1a2e; --accent: #f1c40f; --danger: #e74c3c; }
+        :root { --primary: #3498db; --bg: #1a1a2e; --accent: #f1c40f; }
         body { margin: 0; background: var(--bg); color: white; font-family: sans-serif; display: flex; height: 100vh; }
         
-        /* 侧边栏优化 */
-        #sidebar { width: 260px; background: #16213e; border-right: 1px solid #333; display: none; flex-direction: column; }
-        .sidebar-header { padding: 20px; background: #0f3460; }
-        .demo-btn { width: 100%; padding: 10px; margin-bottom: 15px; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; transition: 0.3s; }
+        #sidebar { width: 280px; background: #16213e; border-right: 1px solid #333; display: none; flex-direction: column; }
+        .sidebar-header { padding: 15px; background: #0f3460; border-bottom: 2px solid #1a1a2e; }
+        #classSelect { width: 100%; padding: 8px; margin-bottom: 15px; background: #1a1a2e; color: white; border: 1px solid var(--primary); }
+        
+        .demo-btn { width: 100%; padding: 10px; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; }
         .demo-off { background: #34495e; color: #bdc3c7; }
-        .demo-on { background: var(--accent); color: #000; box-shadow: 0 0 10px var(--accent); }
-        
-        #student-list { flex: 1; overflow-y: auto; }
-        .student-item { padding: 15px; border-bottom: 1px solid #1a1a2e; cursor: pointer; position: relative; }
-        .student-item.active { background: rgba(52, 152, 219, 0.3); border-left: 4px solid var(--primary); }
-        .status-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: #2ecc71; margin-right: 10px; }
+        .demo-on { background: var(--accent); color: black; }
 
-        /* 主界面 */
-        #main { flex: 1; position: relative; display: flex; flex-direction: column; }
-        #top-bar { padding: 10px 20px; background: rgba(0,0,0,0.3); display: flex; justify-content: space-between; align-items: center; }
-        #container { flex: 1; background: #000; }
-        
-        /* 演示模式遮罩（学生端） */
-        #demo-mask { position: absolute; inset: 0; background: rgba(241, 196, 15, 0.1); border: 3px solid var(--accent); pointer-events: none; display: none; z-index: 1000; }
-        #demo-mask::after { content: "教师演示中..."; position: absolute; top: 10px; left: 50%; transform: translateX(-50%); background: var(--accent); color: black; padding: 2px 10px; font-size: 12px; border-radius: 4px; }
+        .student-item { padding: 12px; border-bottom: 1px solid #222; cursor: pointer; }
+        .student-item.active { background: rgba(52, 152, 219, 0.4); border-left: 4px solid var(--primary); }
 
-        #reg-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 2000; display: none; align-items: center; justify-content: center; }
-        .reg-box { background: white; padding: 30px; border-radius: 12px; width: 320px; color: #333; }
-        input, select { width: 100%; padding: 10px; margin: 8px 0; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box; }
-        .btn-main { width: 100%; padding: 12px; background: var(--primary); color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; }
+        #main { flex: 1; position: relative; overflow: hidden; }
+        #top-bar { padding: 10px; background: rgba(0,0,0,0.2); display: flex; justify-content: space-between; }
+        #container { width: 100%; height: 100%; background-image: radial-gradient(#333 1px, transparent 1px); background-size: 20px 20px; }
+        
+        #demo-mask { position: absolute; inset: 0; border: 4px solid var(--accent); pointer-events: none; display: none; z-index: 999; }
+        #demo-mask::before { content: "教师演示中..."; position: absolute; top: 0; left: 50%; transform: translateX(-50%); background: var(--accent); color: black; padding: 2px 10px; font-size: 12px; font-weight: bold; }
+
+        #reg-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.95); z-index: 2000; display: none; align-items: center; justify-content: center; }
+        .reg-box { background: white; padding: 30px; border-radius: 8px; width: 300px; color: #333; }
+        .reg-box input { width: 100%; padding: 10px; margin: 8px 0; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box; }
         .hide { display: none; }
     </style>
 </head>
@@ -40,22 +36,30 @@
 
 <div id="reg-overlay">
     <div class="reg-box">
-        <h3>系统登录</h3>
-        <select id="userRole" onchange="toggleFields()">
+        <h3 id="reg-title">学生注册</h3>
+        <select id="userRole" onchange="updateRegUI()" style="width:100%; padding:10px; margin-bottom:10px;">
             <option value="STUDENT">我是学生</option>
             <option value="TEACHER">我是教师</option>
         </select>
-        <div id="st-fields"><input type="text" id="className" placeholder="班级名称"><input type="text" id="userId" placeholder="学号"></div>
-        <div id="te-fields" class="hide"><input type="password" id="inviteCode" placeholder="教师邀请码"></div>
-        <input type="text" id="userName" placeholder="真实姓名">
-        <button class="btn-main" onclick="login()">进入系统</button>
+        <div id="st-inputs">
+            <input type="text" id="className" placeholder="班级名称">
+            <input type="text" id="userId" placeholder="学号">
+        </div>
+        <div id="te-inputs" class="hide">
+            <input type="password" id="inviteCode" placeholder="教师邀请码">
+        </div>
+        <input type="text" id="userName" placeholder="姓名">
+        <button onclick="handleLogin()" style="width:100%; padding:12px; background:var(--primary); color:white; border:none; cursor:pointer; font-weight:bold; margin-top:10px;">进入系统</button>
     </div>
 </div>
 
 <div id="sidebar">
     <div class="sidebar-header">
-        <button id="demoBtn" class="demo-btn demo-off" onclick="toggleDemoMode()">演示模式: 关闭</button>
-        <div style="font-size: 12px; opacity: 0.7;">在线学生 (点击监控/取消)</div>
+        <label style="font-size: 12px; opacity: 0.8;">选择班级：</label>
+        <select id="classSelect" onchange="changeClass(this.value)">
+            <option value="">加载中...</option>
+        </select>
+        <button id="demoBtn" class="demo-btn demo-off" onclick="toggleDemo()">演示模式：已关闭</button>
     </div>
     <div id="student-list"></div>
 </div>
@@ -63,160 +67,144 @@
 <div id="main">
     <div id="demo-mask"></div>
     <div id="top-bar">
-        <span id="info-text">未连接</span>
-        <button onclick="logout()" style="background:var(--danger); border:none; color:white; padding:4px 8px; border-radius:4px; cursor:pointer;">注销</button>
+        <span id="status-text">连接中...</span>
+        <button onclick="logout()" style="background:#e74c3c; border:none; color:white; padding:4px 10px; border-radius:4px; cursor:pointer;">注销</button>
     </div>
     <div id="container"></div>
 </div>
 
 <script>
-    let ws, myInfo, myRole, selectedStudentId = null, isDemoMode = false;
-    const WORKER_URL = "wss://api.wangaijun.click";
-    const INVITE_CODE = "147258";
+    let ws, myInfo, myRole, isDemo = false, selectedId = null;
+    const API_BASE = "https://api.wangaijun.click";
+    const WS_BASE = "wss://api.wangaijun.click";
 
-    // 1. 初始化
-    window.onload = () => {
+    window.onload = async () => {
         const saved = localStorage.getItem('sim_user');
         if (saved) {
             myInfo = JSON.parse(saved);
             myRole = localStorage.getItem('sim_role');
-            startConnection();
+            if (myRole === 'TEACHER') await refreshClassList(); // 老师先拿班级
+            startWs();
         } else {
             document.getElementById('reg-overlay').style.display = 'flex';
         }
     };
 
-    function toggleFields() {
+    function updateRegUI() {
         const isT = document.getElementById('userRole').value === 'TEACHER';
-        document.getElementById('st-fields').classList.toggle('hide', isT);
-        document.getElementById('te-fields').classList.toggle('hide', !isT);
+        document.getElementById('st-inputs').classList.toggle('hide', isT);
+        document.getElementById('te-inputs').classList.toggle('hide', !isT);
     }
 
-    function login() {
+    async function handleLogin() {
         const role = document.getElementById('userRole').value;
         const name = document.getElementById('userName').value;
-        if (!name) return alert("请输入姓名");
+        if (!name) return alert("写名字");
 
         if (role === 'TEACHER') {
-            if (document.getElementById('inviteCode').value !== INVITE_CODE) return alert("码错");
-            // 教师端让其手动输入一个想进入的班级，或者由后续切换
-            const cls = prompt("请输入要管理的班级名称", "自动化01");
-            if(!cls) return;
-            myInfo = { userName: name, className: cls, userId: "T-"+name };
+            if (document.getElementById('inviteCode').value !== "147258") return alert("码错");
+            myInfo = { userName: name, className: "Lobby", userId: "T-"+name }; 
         } else {
-            const cls = document.getElementById('className').value;
-            const sid = document.getElementById('userId').value;
-            if(!cls || !sid) return alert("补选信息");
-            myInfo = { userName: name, className: cls, userId: sid };
+            myInfo = { userName: name, className: document.getElementById('className').value, userId: document.getElementById('userId').value };
         }
-        myRole = role;
         localStorage.setItem('sim_user', JSON.stringify(myInfo));
-        localStorage.setItem('sim_role', myRole);
+        localStorage.setItem('sim_role', role);
         location.reload();
     }
 
-    // 2. 连接与通信
-    function startConnection() {
-        if(myRole === 'TEACHER') document.getElementById('sidebar').style.display = 'flex';
-        document.getElementById('info-text').innerText = `[${myInfo.className}] ${myInfo.userName}`;
-        
+    async function refreshClassList() {
+        try {
+            const res = await fetch(`${API_BASE}/get-classes`);
+            const classes = await res.json();
+            const sel = document.getElementById('classSelect');
+            sel.innerHTML = classes.map(c => `<option value="${c}" ${c === myInfo.className ? 'selected' : ''}>${c}</option>`).join('');
+            if (classes.length && !myInfo.className) myInfo.className = classes[0];
+        } catch(e) { console.error("班级加载失败", e); }
+    }
+
+    function startWs() {
+        if (ws) ws.close();
+        if (myRole === 'TEACHER') document.getElementById('sidebar').style.display = 'flex';
+        document.getElementById('status-text').innerText = `[${myInfo.className}] ${myInfo.userName}`;
+
         const params = new URLSearchParams({ role: myRole, info: JSON.stringify(myInfo) });
-        ws = new WebSocket(`${WORKER_URL}?${params.toString()}`);
+        ws = new WebSocket(`${WS_BASE}?${params.toString()}`);
 
         ws.onmessage = (e) => {
-            const msg = JSON.parse(e.data);
-            if (msg.type === 'USER_LIST') renderList(msg.users);
+            const data = JSON.parse(e.data);
+            if (data.type === 'USER_LIST') renderUsers(data.users);
             
-            // 学生端接收：处理演示模式或监控指令
-            if (myRole === 'STUDENT' && msg.type === 'TEACHER_DEMO') {
+            // 演示逻辑：学生端强制同步
+            if (myRole === 'STUDENT' && data.type === 'TEACHER_DEMO') {
                 document.getElementById('demo-mask').style.display = 'block';
-                applyAction(msg.deviceId, msg.action);
-            } 
-            // 教师端接收：监控特定学生
-            else if (myRole === 'TEACHER' && msg.type === 'STUDENT_ACTION' && msg.fromStudent === selectedStudentId) {
-                applyAction(msg.deviceId, msg.action);
+                syncDev(data.deviceId, data.action);
+            }
+            // 监控逻辑：老师端同步指定学生
+            if (myRole === 'TEACHER' && data.type === 'STUDENT_ACTION' && data.fromStudent === selectedId) {
+                syncDev(data.deviceId, data.action);
             }
         };
     }
 
-    // 3. 教师逻辑：演示与监控
-    function toggleDemoMode() {
-        isDemoMode = !isDemoMode;
-        const btn = document.getElementById('demoBtn');
-        btn.innerText = isDemoMode ? "演示模式: 开启中" : "演示模式: 关闭";
-        btn.className = `demo-btn ${isDemoMode ? 'demo-on' : 'demo-off'}`;
-        
-        // 如果开启演示，取消当前所有监控
-        if (isDemoMode) selectedStudentId = null;
-        renderList([]); 
+    function changeClass(c) {
+        myInfo.className = c;
+        selectedId = null;
+        startWs();
     }
 
-    function renderList(users) {
-        if (myRole !== 'TEACHER' || !users.length) return;
-        const listDiv = document.getElementById('student-list');
-        listDiv.innerHTML = users.filter(u => u.role === 'STUDENT').map(u => `
-            <div class="student-item ${selectedStudentId === u.userId ? 'active' : ''}" onclick="handleStudentClick('${u.userId}')">
-                <span class="status-dot"></span>${u.userName} (${u.userId})
+    function toggleDemo() {
+        isDemo = !isDemo;
+        const b = document.getElementById('demoBtn');
+        b.innerText = isDemo ? "演示模式：开启中" : "演示模式：已关闭";
+        b.className = `demo-btn ${isDemo ? 'demo-on' : 'demo-off'}`;
+        if (isDemo) { selectedId = null; renderUsers([]); }
+    }
+
+    function handleUserClick(sid) {
+        if (isDemo) return;
+        selectedId = (selectedId === sid) ? null : sid; // Toggle 逻辑
+        const items = document.querySelectorAll('.student-item');
+        items.forEach(i => i.classList.remove('active'));
+        if (selectedId) event.currentTarget.classList.add('active');
+    }
+
+    function renderUsers(users) {
+        if (myRole !== 'TEACHER') return;
+        const list = document.getElementById('student-list');
+        list.innerHTML = users.filter(u => u.role === 'STUDENT').map(u => `
+            <div class="student-item ${selectedId === u.userId ? 'active' : ''}" onclick="handleUserClick('${u.userId}')">
+                <span class="status-dot"></span> ${u.userName} (${u.userId})
             </div>
         `).join('');
     }
 
-    function handleStudentClick(sid) {
-        if (isDemoMode) return alert("演示模式下无法监控单人");
-        
-        if (selectedStudentId === sid) {
-            selectedStudentId = null; // 再次点击取消
-            alert("已取消监控");
-        } else {
-            selectedStudentId = sid; // 切换或选中
-            alert("正在监控: " + sid);
-        }
-        // 触发重绘 UI 状态
-        startConnection(); // 简单重连或触发一次列表广播
-    }
-
-    // 4. 画布逻辑
-    const stage = new Konva.Stage({ container: 'container', width: window.innerWidth - (myRole==='TEACHER'?260:0), height: window.innerHeight - 50 });
+    // 画布逻辑
+    const stage = new Konva.Stage({ container: 'container', width: window.innerWidth, height: window.innerHeight - 50 });
     const layer = new Konva.Layer();
     stage.add(layer);
     const devices = {};
 
     class Pump {
         constructor(id, x, y) {
-            this.id = id; this.status = 'OFF';
-            this.group = new Konva.Group({ x, y, cursor: 'pointer' });
-            this.rect = new Konva.Rect({ width: 100, height: 60, fill: '#2c3e50', stroke: '#34495e' });
-            this.light = new Konva.Circle({ x: 20, y: 30, radius: 10, fill: 'red' });
-            this.group.add(this.rect, this.light, new Konva.Text({ text: id, x: 40, y: 25, fill: 'white' }));
-            
-            this.group.on('click', () => {
-                // 演示模式下，老师点，学生变。非演示模式，老师不能点。
-                if (myRole === 'TEACHER') {
-                    if (!isDemoMode) return alert("请先开启演示模式再操作");
-                    this.executeAction();
-                    ws.send(JSON.stringify({ type: "TEACHER_DEMO", deviceId: this.id, action: this.status }));
-                } else {
-                    // 学生操作
-                    this.executeAction();
-                    ws.send(JSON.stringify({ type: "STUDENT_ACTION", fromStudent: myInfo.userId, deviceId: this.id, action: this.status }));
-                }
+            this.id = id; this.state = 'OFF';
+            this.grp = new Konva.Group({ x, y, cursor: 'pointer' });
+            this.rect = new Konva.Rect({ width: 80, height: 50, fill: '#2c3e50', stroke: '#444' });
+            this.dot = new Konva.Circle({ x: 15, y: 25, radius: 8, fill: 'red' });
+            this.grp.add(this.rect, this.dot, new Konva.Text({ text: id, x: 30, y: 20, fill: 'white' }));
+            this.grp.on('click', () => {
+                if (myRole === 'TEACHER' && !isDemo) return;
+                this.state = this.state === 'OFF' ? 'ON' : 'OFF';
+                this.update();
+                const type = (myRole === 'TEACHER') ? "TEACHER_DEMO" : "STUDENT_ACTION";
+                ws.send(JSON.stringify({ type, fromStudent: myInfo.userId, deviceId: this.id, action: this.state }));
             });
-            devices[id] = this; layer.add(this.group);
+            devices[id] = this; layer.add(this.grp);
         }
-        executeAction() {
-            this.status = this.status === 'OFF' ? 'ON' : 'OFF';
-            this.render();
-        }
-        render() { this.light.fill(this.status === 'ON' ? '#2ecc71' : 'red'); layer.draw(); }
+        update() { this.dot.fill(this.state === 'ON' ? '#2ecc71' : 'red'); layer.draw(); }
     }
 
-    new Pump('PUMP_01', 100, 100);
-    layer.draw();
-
-    function applyAction(id, act) {
-        if(devices[id]) { devices[id].status = act; devices[id].render(); }
-    }
-
+    new Pump('PUMP_01', 100, 100); layer.draw();
+    function syncDev(id, act) { if (devices[id]) { devices[id].state = act; devices[id].update(); } }
     function logout() { localStorage.clear(); location.reload(); }
 </script>
 </body>
