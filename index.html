@@ -180,7 +180,7 @@
         const btn = document.getElementById('demoBtn');
         btn.innerText = isDemo ? "演示模式：开启中" : "演示模式：已关闭";
         btn.className = `demo-btn ${isDemo ? 'demo-on' : 'demo-off'}`;
-        if(isDemo) { selectedId = null; renderUserList([]); }
+        if(isDemo) { selectedId = null; }
     }
 
     // 教师功能：监控选中/取消 (Toggle)
@@ -240,3 +240,4 @@
 </script>
 </body>
 </html>
+
