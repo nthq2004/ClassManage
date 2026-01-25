@@ -2,275 +2,42 @@
 <html>
 <head>
     <meta charset="UTF-8">
-    <title>仿真课堂 - 演示模式</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>云仿真横屏系统</title>
+    <link rel="stylesheet" href="style.css">
     <script src="https://unpkg.com/konva@9/konva.min.js"></script>
-    <style>
-        :root { --primary: #3498db; --bg: #1a1a2e; --accent: #f1c40f; --danger: #e74c3c; }
-        body { margin: 0; background: var(--bg); color: white; font-family: sans-serif; display: flex; height: 100vh; overflow: hidden; }
-        
-        /* 侧边栏 */
-        #sidebar { width: 280px; background: #16213e; border-right: 1px solid #333; display: none; flex-direction: column; }
-        .sidebar-header { padding: 15px; background: #0f3460; border-bottom: 2px solid #1a1a2e; }
-        #classSelect { width: 100%; padding: 8px; margin-bottom: 10px; background: #1a1a2e; color: white; border: 1px solid var(--primary); }
-        .demo-btn { width: 100%; padding: 10px; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; }
-        .demo-off { background: #34495e; color: #bdc3c7; }
-        .demo-on { background: var(--accent); color: black; box-shadow: 0 0 10px var(--accent); }
-
-        #student-list { flex: 1; overflow-y: auto; }
-        .student-item { padding: 15px; border-bottom: 1px solid #222; cursor: pointer; transition: 0.2s; }
-        .student-item:hover { background: #1f4068; }
-        .student-item.active { background: rgba(52, 152, 219, 0.4); border-left: 5px solid var(--primary); }
-        .status-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: #2ecc71; margin-right: 10px; }
-
-        /* 主画布 */
-        #main { flex: 1; position: relative; }
-        #top-bar { padding: 10px 20px; background: rgba(0,0,0,0.3); display: flex; justify-content: space-between; align-items: center; }
-        #container { width: 100%; height: 100%; }
-        
-        #demo-mask { position: absolute; inset: 0; border: 4px solid var(--accent); pointer-events: none; display: none; z-index: 999; }
-        #demo-mask::before { content: "教师演示同步中..."; position: absolute; top: 0; left: 50%; transform: translateX(-50%); background: var(--accent); color: black; padding: 2px 12px; font-size: 12px; font-weight: bold; border-radius: 0 0 5px 5px; }
-
-        /* 注册弹窗 */
-        #reg-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.95); z-index: 2000; display: none; align-items: center; justify-content: center; }
-        .reg-box { background: white; padding: 30px; border-radius: 8px; width: 300px; color: #333; }
-        .reg-box input, .reg-box select { width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box; }
-        .hide { display: none !important; }
-    </style>
 </head>
 <body>
-
-<div id="reg-overlay">
-    <div class="reg-box">
-        <h3 style="margin:0 0 15px 0; color:var(--primary)">系统登录</h3>
-        <select id="userRole" onchange="toggleRegUI()">
-            <option value="STUDENT">我是学生</option>
-            <option value="TEACHER">我是教师</option>
-        </select>
-        <div id="st-inputs">
-            <input type="text" id="regClassName" placeholder="班级名称 (如: 自动化01)">
-            <input type="text" id="regUserId" placeholder="学号">
-        </div>
-        <div id="te-inputs" class="hide">
-            <input type="password" id="regInviteCode" placeholder="教师邀请码 (147258)">
-        </div>
-        <input type="text" id="regUserName" placeholder="真实姓名">
-        <button onclick="handleLogin()" style="width:100%; padding:12px; background:var(--primary); color:white; border:none; border-radius:4px; cursor:pointer; font-weight:bold; margin-top:10px;">进入系统</button>
-    </div>
-</div>
-
-<div id="sidebar">
-    <div class="sidebar-header">
-        <label style="font-size: 11px; opacity: 0.7;">切换管理班级：</label>
-        <select id="classSelect" onchange="changeClass(this.value)">
-            <option value="">加载班级中...</option>
-        </select>
-        <button id="demoBtn" class="demo-btn demo-off" onclick="toggleDemoMode()">演示模式：已关闭</button>
-    </div>
-    <div id="student-list"></div>
-</div>
-<div style="margin-top:auto; padding:15px; border-top:1px solid #333;">
-    <a href="#" onclick="showAdminPanel()" style="color:var(--accent); font-size:12px; text-decoration:none;">⚙️ 班级数据管理控制台</a>
-</div>
-
-<div id="admin-modal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.9); z-index:3000; padding:20px; overflow-y:auto;">
-    <div style="background:#fff; color:#333; padding:20px; border-radius:8px; max-width:800px; margin:0 auto;">
-        <div style="display:flex; justify-content:space-between;">
-            <h2>全校仿真数据概览</h2>
-            <button onclick="document.getElementById('admin-modal').style.display='none'">关闭</button>
-        </div>
-        <pre id="admin-content" style="background:#f4f4f4; padding:10px; border-radius:4px; font-size:12px; white-space:pre-wrap;"></pre>
-    </div>
-</div>
-<div id="main">
-    <div id="demo-mask"></div>
-    <div id="top-bar">
-        <span id="status-text">正在初始化...</span>
-        <button onclick="logout()" style="background:var(--danger); border:none; color:white; padding:5px 12px; border-radius:4px; cursor:pointer; font-size:12px;">注销退出</button>
-    </div>
-    <div id="container"></div>
-</div>
-
-<script>
-    let ws, myInfo, myRole, isDemo = false, selectedId = null;
-    const BASE_URL = "api.wangaijun.click"; // 你的域名
-
-    window.onload = async () => {
-        const saved = localStorage.getItem('sim_user');
-        if (saved) {
-            myInfo = JSON.parse(saved);
-            myRole = localStorage.getItem('sim_role');
-            if (myRole === 'TEACHER') await refreshClassOptions();
-            startWs();
-        } else {
-            document.getElementById('reg-overlay').style.display = 'flex';
-        }
-    };
-
-    // 注册 UI 切换
-    function toggleRegUI() {
-        const isT = document.getElementById('userRole').value === 'TEACHER';
-        document.getElementById('st-inputs').classList.toggle('hide', isT);
-        document.getElementById('te-inputs').classList.toggle('hide', !isT);
-    }
-
-    // 登录处理
-    async function handleLogin() {
-        const role = document.getElementById('userRole').value;
-        const name = document.getElementById('regUserName').value;
-        if(!name) return alert("请输入姓名");
-
-        if(role === 'TEACHER') {
-            if(document.getElementById('regInviteCode').value !== "147258") return alert("邀请码错误");
-            myInfo = { userName: name, className: "Lobby", userId: "T-"+Date.now() };
-        } else {
-            const cls = document.getElementById('regClassName').value;
-            const sid = document.getElementById('regUserId').value;
-            if(!cls || !sid) return alert("请填写完整班级和学号");
-            myInfo = { userName: name, className: cls, userId: sid };
-        }
-        
-        myRole = role;
-        localStorage.setItem('sim_user', JSON.stringify(myInfo));
-        localStorage.setItem('sim_role', role);
-        location.reload();
-    }
-
-    //显示所有数据
-    async function showAdminPanel() {
-    const modal = document.getElementById('admin-modal');
-    const content = document.getElementById('admin-content');
-    modal.style.display = 'block';
-    content.innerText = "正在抓取所有 DO 数据...";
-
-    try {
-        const res = await fetch(`https://${BASE_URL}/admin/all-data`);
-        const data = await res.json();
-        
-        // 格式化展示数据
-        content.innerText = JSON.stringify(data, null, 2);
-        
-        // 如果你想做“处理”功能，可以在这里添加按钮发请求到后端
-        // 例如：重置某个班级的数据
-    } catch (e) {
-        content.innerText = "抓取失败: " + e.message;
-    }
-}
-    // 获取班级列表
-    async function refreshClassOptions() {
-        try {
-            const res = await fetch(`https://${BASE_URL}/get-classes?t=${Date.now()}`);
-            const classes = await res.json();
-            const sel = document.getElementById('classSelect');
-            sel.innerHTML = classes.map(c => `<option value="${c}" ${c === myInfo.className ? 'selected' : ''}>${c}</option>`).join('');
-            if(!myInfo.className && classes.length) myInfo.className = classes[0];
-        } catch(e) { console.error("加载班级失败", e); }
-    }
-
-    // 班级切换逻辑
-    function changeClass(newClass) {
-        if(!newClass || newClass === myInfo.className) return;
-        myInfo.className = newClass;
-        selectedId = null; // 换班重置监控
-        localStorage.setItem('sim_user', JSON.stringify(myInfo));
-        startWs(); // 重新连接新房间
-    }
-
-    // WebSocket 连接
-    function startWs() {
-        if(ws) ws.close();
-        if(myRole === 'TEACHER') document.getElementById('sidebar').style.display = 'flex';
-        document.getElementById('status-text').innerText = `[${myInfo.className}] ${myInfo.userName} - 连接中...`;
-
-        const params = new URLSearchParams({ role: myRole, info: JSON.stringify(myInfo) });
-        ws = new WebSocket(`wss://${BASE_URL}?${params.toString()}`);
-
-        ws.onopen = () => document.getElementById('status-text').innerText = `[${myInfo.className}] ${myInfo.userName} (在线)`;
-
-        ws.onmessage = (e) => {
-            const data = JSON.parse(e.data);
-            // 1. 名单更新
-            if(data.type === 'USER_LIST') renderUserList(data.users);
-            
-            // 2. 学生收到教师演示
-            if(myRole === 'STUDENT' && data.type === 'TEACHER_DEMO') {
-                document.getElementById('demo-mask').style.display = 'block';
-                applyUpdate(data.deviceId, data.action);
-            }
-            
-            // 3. 教师收到学生操作 (监控中且非演示模式)
-            if(myRole === 'TEACHER' && !isDemo && data.type === 'STUDENT_ACTION' && data.fromStudent === selectedId) {
-                applyUpdate(data.deviceId, data.action);
-            }
-        };
-
-        ws.onclose = () => setTimeout(startWs, 3000);
-    }
-
-    // 教师功能：Toggle 演示模式
-    function toggleDemoMode() {
-        isDemo = !isDemo;
-        const btn = document.getElementById('demoBtn');
-        btn.innerText = isDemo ? "演示模式：开启中" : "演示模式：已关闭";
-        btn.className = `demo-btn ${isDemo ? 'demo-on' : 'demo-off'}`;
-        if(isDemo) { selectedId = null; }
-    }
-
-    // 教师功能：监控选中/取消 (Toggle)
-    function handleUserItemClick(sid) {
-        if(isDemo) return;
-        selectedId = (selectedId === sid) ? null : sid; // 点一下选中，再点取消
-        
-        // 刷新列表显示选中状态
-        const items = document.querySelectorAll('.student-item');
-        items.forEach(el => {
-            el.classList.toggle('active', el.getAttribute('data-id') === selectedId);
-        });
-    }
-
-    function renderUserList(users) {
-        if(myRole !== 'TEACHER') return;
-        const list = document.getElementById('student-list');
-        list.innerHTML = users.filter(u => u.role === 'STUDENT').map(u => `
-            <div class="student-item ${selectedId === u.userId ? 'active' : ''}" data-id="${u.userId}" onclick="handleUserItemClick('${u.userId}')">
-                <span class="status-dot"></span>${u.userName} (${u.userId})
+    <div id="main-wrapper">
+        <div id="sidebar">
+            <div class="sidebar-header">
+                <select id="classSelect" onchange="changeClass(this.value)"></select>
+                <button id="demoBtn" class="demo-btn demo-off" onclick="toggleDemo()">演示模式</button>
             </div>
-        `).join('');
-    }
+            <div id="student-list"></div>
+        </div>
+        <div id="main">
+            <button id="fullscreen-btn" onclick="toggleFullscreen()">全屏</button>
+            <div id="container" style="width:100%; height:100%;"></div>
+        </div>
+    </div>
 
-    // --- 画布逻辑 ---
-    const stage = new Konva.Stage({ container: 'container', width: 800, height: 600 });
-    const layer = new Konva.Layer();
-    stage.add(layer);
-    const devices = {};
-
-    class Pump {
-        constructor(id, x, y) {
-            this.id = id; this.state = 'OFF';
-            this.grp = new Konva.Group({ x, y, cursor: 'pointer' });
-            this.rect = new Konva.Rect({ width: 90, height: 50, fill: '#2c3e50', stroke: '#444' });
-            this.dot = new Konva.Circle({ x: 20, y: 25, radius: 8, fill: 'red' });
-            this.grp.add(this.rect, this.dot, new Konva.Text({ text: id, x: 35, y: 20, fill: 'white' }));
-            
-            this.grp.on('click', () => {
-                if(myRole === 'TEACHER' && !isDemo) return; // 教师非演示模式不能点
-                this.state = (this.state === 'OFF') ? 'ON' : 'OFF';
-                this.draw();
-                
-                const type = (myRole === 'TEACHER') ? "TEACHER_DEMO" : "STUDENT_ACTION";
-                if(ws.readyState === 1) ws.send(JSON.stringify({ 
-                    type, deviceId: this.id, action: this.state, fromStudent: myInfo.userId 
-                }));
-            });
-            devices[id] = this; layer.add(this.grp);
-        }
-        draw() { this.dot.fill(this.state === 'ON' ? '#2ecc71' : 'red'); layer.draw(); }
-    }
-
-    new Pump('PUMP_01', 50, 50); layer.draw();
-    function applyUpdate(id, act) { if(devices[id]) { devices[id].state = act; devices[id].draw(); } }
-    function logout() { localStorage.clear(); location.reload(); }
-</script>
+    <div id="reg-overlay">
+        <div class="reg-box">
+            <h3>登录</h3>
+            <select id="userRole" onchange="document.getElementById('st-inputs').classList.toggle('hide', this.value==='TEACHER')">
+                <option value="STUDENT">学生</option>
+                <option value="TEACHER">老师</option>
+            </select>
+            <div id="st-inputs">
+                <input type="text" id="regClassName" placeholder="班级">
+                <input type="text" id="regUserId" placeholder="学号">
+            </div>
+            <input type="password" id="regInviteCode" class="hide" placeholder="邀请码">
+            <input type="text" id="regUserName" placeholder="姓名">
+            <button onclick="handleLogin()">进入</button>
+        </div>
+    </div>
+    <script type="module" src="main.js"></script>
 </body>
 </html>
-
-
