@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>云端仿真同步系统</title>
+    <script src="https://unpkg.com/konva@9/konva.min.js"></script>
+    <style>
+        :root { --primary: #3498db; --bg: #1a1a2e; }
+        body { margin: 0; background: var(--bg); color: white; font-family: 'Segoe UI', sans-serif; overflow: hidden; }
+        /* 注册弹窗 */
+        #reg-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 1000; display: flex; align-items: center; justify-content: center; }
+        .reg-box { background: #fff; color: #333; padding: 30px; border-radius: 12px; width: 300px; }
+        .reg-box input { width: 100%; margin: 10px 0; padding: 10px; box-sizing: border-box; }
+        .reg-box button { width: 100%; padding: 10px; background: var(--primary); color: white; border: none; cursor: pointer; }
+        
+        /* 老师面板 */
+        #teacher-panel { position: absolute; left: 0; top: 0; bottom: 0; width: 240px; background: rgba(255,255,255,0.05); border-right: 1px solid #333; display: none; }
+        .student-item { padding: 15px; border-bottom: 1px solid #333; cursor: pointer; transition: 0.3s; }
+        .student-item:hover { background: rgba(255,255,255,0.1); }
+        .student-item.active { border-left: 5px solid var(--primary); background: rgba(52, 152, 219, 0.2); }
+        .status-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 8px; background: #2ecc71; }
+        
+        /* 拖拽指引 */
+        #guide { position: absolute; right: 20px; top: 20px; width: 220px; background: rgba(255,255,255,0.9); color: #333; border-radius: 8px; z-index: 50; }
+        #guide-header { padding: 10px; background: #333; color: #fff; cursor: move; border-radius: 8px 8px 0 0; }
+        .guide-body { padding: 15px; font-size: 14px; }
+    </style>
+</head>
+<body>
+
+<div id="reg-overlay">
+    <div class="reg-box">
+        <h3>学生/教师注册</h3>
+        <input type="text" id="className" placeholder="班级名称 (如: 自动化2401)">
+        <input type="text" id="userName" placeholder="姓名">
+        <input type="text" id="userId" placeholder="学号">
+        <select id="userRole" style="width:100%; padding:10px; margin-bottom:10px;">
+            <option value="STUDENT">我是学生</option>
+            <option value="TEACHER">我是教师</option>
+        </select>
+        <button onclick="doRegister()">进入系统</button>
+    </div>
+</div>
+
+<div id="teacher-panel">
+    <div style="padding:15px; background: #333;">学生列表</div>
+    <div id="student-list"></div>
+</div>
+
+<div id="guide">
+    <div id="guide-header">⠿ 操作步骤</div>
+    <div class="guide-body" id="guide-text">请先连接系统...</div>
+</div>
+
+<div id="container"></div>
+
+<script>
+    // --- 变量定义 ---
+    let ws, myInfo, myRole, selectedStudentId = null;
+    const WORKER_URL = "wss://api.wangaijun.click"; // 部署后修改此处
+
+    // --- 1. 注册与连接 ---
+    function doRegister() {
+        myInfo = {
+            className: document.getElementById('className').value,
+            userName: document.getElementById('userName').value,
+            userId: document.getElementById('userId').value
+        };
+        myRole = document.getElementById('userRole').value;
+        if(!myInfo.className || !myInfo.userName) return alert("请填写完整");
+        
+        localStorage.setItem('sim_user', JSON.stringify(myInfo));
+        localStorage.setItem('sim_role', myRole);
+        
+        startSystem();
+    }
+
+    function startSystem() {
+        document.getElementById('reg-overlay').style.display = 'none';
+        if(myRole === 'TEACHER') document.getElementById('teacher-panel').style.display = 'block';
+        
+        const params = new URLSearchParams({ role: myRole, info: JSON.stringify(myInfo) });
+        ws = new WebSocket(`${WORKER_URL}?${params.toString()}`);
+
+        ws.onmessage = (e) => {
+            const msg = JSON.parse(e.data);
+            if(msg.type === 'USER_LIST') updateStudentList(msg.users);
+            else if(myRole === 'TEACHER' && msg.studentId === selectedStudentId) {
+                applyRemoteAction(msg.deviceId, msg.action);
+            }
+        };
+        
+        document.getElementById('guide-text').innerHTML = myRole === 'STUDENT' ? "请开始实验操作" : "请在左侧选择学生进行监控";
+    }
+
+    // --- 2. 老师端逻辑 ---
+    function updateStudentList(users) {
+        if(myRole !== 'TEACHER') return;
+        const list = document.getElementById('student-list');
+        list.innerHTML = users.filter(u => u.role === 'STUDENT').map(u => `
+            <div class="student-item ${selectedStudentId === u.userId ? 'active' : ''}" onclick="selectStudent('${u.userId}')">
+                <span class="status-dot"></span> ${u.userName} (${u.userId})
+            </div>
+        `).join('');
+    }
+
+    function selectStudent(id) {
+        selectedStudentId = id;
+        document.getElementById('guide-text').innerHTML = `正在监控: ${id}`;
+        // 清空当前画面状态(略)
+        updateStudentList([]); // 刷新列表选中状态
+    }
+
+    function applyRemoteAction(deviceId, action) {
+        const device = devices[deviceId];
+        if(device) device.updateStatus(action);
+    }
+
+    // --- 3. 仿真核心 (Konva) ---
+    const stage = new Konva.Stage({ container: 'container', width: window.innerWidth, height: window.innerHeight });
+    const layer = new Konva.Layer();
+    stage.add(layer);
+
+    const devices = {};
+    class Pump {
+        constructor(id, x, y) {
+            this.id = id;
+            this.group = new Konva.Group({ x, y, cursor: 'pointer' });
+            this.rect = new Konva.Rect({ width: 80, height: 60, fill: '#34495e', cornerRadius: 5 });
+            this.light = new Konva.Circle({ x: 20, y: 30, radius: 8, fill: 'red' });
+            this.group.add(this.rect, this.light, new Konva.Text({ text: id, x: 35, y: 25, fill: '#fff' }));
+            
+            this.group.on('click', () => {
+                if(myRole === 'TEACHER') return;
+                const newStatus = this.light.fill() === 'red' ? 'ON' : 'OFF';
+                this.updateStatus(newStatus);
+                ws.send(JSON.stringify({ studentId: myInfo.userId, deviceId: this.id, action: newStatus }));
+            });
+            devices[id] = this;
+        }
+        updateStatus(status) {
+            this.light.fill(status === 'ON' ? '#2ecc71' : 'red');
+            layer.draw();
+        }
+    }
+
+    layer.add(new Pump('PUMP_01', 400, 300).group);
+    layer.draw();
+
+    // 指引面板拖拽
+    const guide = document.getElementById('guide');
+    const header = document.getElementById('guide-header');
+    header.onmousedown = (e) => {
+        let offsetX = e.clientX - guide.offsetLeft;
+        let offsetY = e.clientY - guide.offsetTop;
+        document.onmousemove = (ev) => {
+            guide.style.left = (ev.clientX - offsetX) + 'px';
+            guide.style.top = (ev.clientY - offsetY) + 'px';
+        };
+        document.onmouseup = () => document.onmousemove = null;
+    };
+</script>
+</body>
+</html>
