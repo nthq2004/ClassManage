@@ -18,10 +18,20 @@ engine.addPump('PUMP_01', 50, 50);
 window.engine = engine; // 挂载到全局方便 resize 访问
 
 // 2. 初始化网络
-const network = new NetworkManager(BASE_URL, (data) => {
+// 确保 network 实例化在 window 上，防止作用域丢失
+window.network = new NetworkManager(BASE_URL, (data) => {
+    console.log("收到消息:", data.type); // 增加调试日志
     if (data.type === 'USER_LIST') renderList(data.users);
-    if (myRole === 'STUDENT' && data.type === 'TEACHER_DEMO') engine.update(data.deviceId, data.action);
-    if (myRole === 'TEACHER' && !isDemo && data.fromStudent === selectedId) {
+    
+    // 监控核心逻辑：老师在非演示模式下，接收选中学生的消息
+    if (myRole === 'TEACHER' && !isDemo) {
+        if (data.type === 'STUDENT_ACTION' && data.fromStudent === selectedId) {
+            engine.update(data.deviceId, data.action);
+        }
+    }
+    
+    // 演示逻辑：学生强制接收老师的消息
+    if (myRole === 'STUDENT' && data.type === 'TEACHER_DEMO') {
         engine.update(data.deviceId, data.action);
     }
 });
@@ -34,6 +44,17 @@ window.toggleFullscreen = () => {
     } else {
         document.exitFullscreen();
     }
+};
+
+// 修复点击学生列表的逻辑
+window.selectS = (id) => {
+    if (isDemo) return;
+    // 如果点的是当前已选中的，则取消选中；否则切换到新 ID
+    selectedId = (selectedId === id) ? null : id;
+    
+    // 立即重绘列表以显示选中状态
+    const savedUsers = JSON.parse(localStorage.getItem('last_user_list') || "[]");
+    renderList(savedUsers);
 };
 
 window.handleLogin = async () => {
@@ -94,4 +115,5 @@ if (saved) {
     network.connect(myRole, myInfo);
 } else {
     document.getElementById('reg-overlay').style.display = 'flex';
+
 }
