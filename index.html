@@ -2,122 +2,153 @@
 <html>
 <head>
     <meta charset="UTF-8">
-    <title>云端仿真同步系统</title>
+    <title> wangaijun.click 仿真课堂</title>
     <script src="https://unpkg.com/konva@9/konva.min.js"></script>
     <style>
         :root { --primary: #3498db; --bg: #1a1a2e; }
-        body { margin: 0; background: var(--bg); color: white; font-family: 'Segoe UI', sans-serif; overflow: hidden; }
+        body { margin: 0; background: var(--bg); color: white; font-family: sans-serif; display: flex; height: 100vh; }
+        
+        /* 侧边栏 */
+        #sidebar { width: 250px; background: #16213e; border-right: 1px solid #333; display: none; flex-direction: column; }
+        .list-header { padding: 15px; background: #0f3460; font-weight: bold; }
+        #student-list { flex: 1; overflow-y: auto; }
+        .student-item { padding: 12px 15px; border-bottom: 1px solid #1a1a2e; cursor: pointer; display: flex; align-items: center; }
+        .student-item:hover { background: #1f4068; }
+        .student-item.active { background: var(--primary); color: white; }
+        .status-dot { width: 8px; height: 8px; border-radius: 50%; background: #2ecc71; margin-right: 10px; }
+
+        /* 画布区 */
+        #main { flex: 1; position: relative; }
+        
         /* 注册弹窗 */
-        #reg-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 1000; display: flex; align-items: center; justify-content: center; }
-        .reg-box { background: #fff; color: #333; padding: 30px; border-radius: 12px; width: 300px; }
-        .reg-box input { width: 100%; margin: 10px 0; padding: 10px; box-sizing: border-box; }
-        .reg-box button { width: 100%; padding: 10px; background: var(--primary); color: white; border: none; cursor: pointer; }
-        
-        /* 老师面板 */
-        #teacher-panel { position: absolute; left: 0; top: 0; bottom: 0; width: 240px; background: rgba(255,255,255,0.05); border-right: 1px solid #333; display: none; }
-        .student-item { padding: 15px; border-bottom: 1px solid #333; cursor: pointer; transition: 0.3s; }
-        .student-item:hover { background: rgba(255,255,255,0.1); }
-        .student-item.active { border-left: 5px solid var(--primary); background: rgba(52, 152, 219, 0.2); }
-        .status-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 8px; background: #2ecc71; }
-        
-        /* 拖拽指引 */
-        #guide { position: absolute; right: 20px; top: 20px; width: 220px; background: rgba(255,255,255,0.9); color: #333; border-radius: 8px; z-index: 50; }
-        #guide-header { padding: 10px; background: #333; color: #fff; cursor: move; border-radius: 8px 8px 0 0; }
-        .guide-body { padding: 15px; font-size: 14px; }
+        #reg-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.85); z-index: 1000; display: none; align-items: center; justify-content: center; }
+        .reg-box { background: white; padding: 30px; border-radius: 12px; width: 320px; color: #333; }
+        .reg-box input, .reg-box select { width: 100%; padding: 12px; margin: 10px 0; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box;}
+        .reg-box button { width: 100%; padding: 12px; background: var(--primary); color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; }
+
+        #top-bar { position: absolute; top: 10px; right: 10px; background: rgba(0,0,0,0.5); padding: 8px 15px; border-radius: 20px; font-size: 13px; z-index: 10; }
     </style>
 </head>
 <body>
 
 <div id="reg-overlay">
     <div class="reg-box">
-        <h3>学生/教师注册</h3>
-        <input type="text" id="className" placeholder="班级名称 (如: 自动化2401)">
+        <h3 style="margin-top:0">仿真课堂注册</h3>
+        <input type="text" id="className" placeholder="班级名称">
         <input type="text" id="userName" placeholder="姓名">
-        <input type="text" id="userId" placeholder="学号">
-        <select id="userRole" style="width:100%; padding:10px; margin-bottom:10px;">
+        <input type="text" id="userId" placeholder="学号/教师工号">
+        <select id="userRole">
             <option value="STUDENT">我是学生</option>
             <option value="TEACHER">我是教师</option>
         </select>
-        <button onclick="doRegister()">进入系统</button>
+        <button onclick="saveAndConnect()">进入系统</button>
     </div>
 </div>
 
-<div id="teacher-panel">
-    <div style="padding:15px; background: #333;">学生列表</div>
+<div id="sidebar">
+    <div class="list-header">在线学生列表</div>
     <div id="student-list"></div>
 </div>
 
-<div id="guide">
-    <div id="guide-header">⠿ 操作步骤</div>
-    <div class="guide-body" id="guide-text">请先连接系统...</div>
+<div id="main">
+    <div id="top-bar">未连接</div>
+    <div id="container"></div>
 </div>
 
-<div id="container"></div>
-
 <script>
-    // --- 变量定义 ---
     let ws, myInfo, myRole, selectedStudentId = null;
-    const WORKER_URL = "wss://api.wangaijun.click"; // 部署后修改此处
+    const WORKER_URL = "wss://api.wangaijun.click"; // 确保此地址已绑定成功
 
-    // --- 1. 注册与连接 ---
-    function doRegister() {
+    // 1. 初始化检测：实现本地存储
+    window.onload = () => {
+        const savedInfo = localStorage.getItem('sim_user');
+        const savedRole = localStorage.getItem('sim_role');
+
+        if (savedInfo && savedRole) {
+            myInfo = JSON.parse(savedInfo);
+            myRole = savedRole;
+            startConnection();
+        } else {
+            document.getElementById('reg-overlay').style.display = 'flex';
+        }
+    };
+
+    function saveAndConnect() {
         myInfo = {
             className: document.getElementById('className').value,
             userName: document.getElementById('userName').value,
             userId: document.getElementById('userId').value
         };
         myRole = document.getElementById('userRole').value;
-        if(!myInfo.className || !myInfo.userName) return alert("请填写完整");
-        
+
+        if (!myInfo.className || !myInfo.userName) return alert("请填写完整信息");
+
         localStorage.setItem('sim_user', JSON.stringify(myInfo));
         localStorage.setItem('sim_role', myRole);
         
-        startSystem();
+        document.getElementById('reg-overlay').style.display = 'none';
+        startConnection();
     }
 
-    function startSystem() {
-        document.getElementById('reg-overlay').style.display = 'none';
-        if(myRole === 'TEACHER') document.getElementById('teacher-panel').style.display = 'block';
-        
+    // 2. WebSocket 连接
+    function startConnection() {
+        if (myRole === 'TEACHER') document.getElementById('sidebar').style.display = 'flex';
+        document.getElementById('top-bar').innerText = `班级: ${myInfo.className} | 用户: ${myInfo.userName} (${myRole})`;
+
         const params = new URLSearchParams({ role: myRole, info: JSON.stringify(myInfo) });
         ws = new WebSocket(`${WORKER_URL}?${params.toString()}`);
 
         ws.onmessage = (e) => {
             const msg = JSON.parse(e.data);
-            if(msg.type === 'USER_LIST') updateStudentList(msg.users);
-            else if(myRole === 'TEACHER' && msg.studentId === selectedStudentId) {
-                applyRemoteAction(msg.deviceId, msg.action);
+            
+            if (msg.type === 'USER_LIST') {
+                renderStudentList(msg.users);
+            } else if (msg.type === 'STUDENT_ACTION') {
+                // 教师端：只有选中了该学生，才同步其画面
+                if (myRole === 'TEACHER' && msg.fromStudent === selectedStudentId) {
+                    applyAction(msg.deviceId, msg.action);
+                }
             }
         };
+
+        ws.onclose = () => {
+            document.getElementById('top-bar').innerText = "连接已断开，正在尝试重连...";
+            setTimeout(startConnection, 3000);
+        };
+    }
+
+    // 3. 教师端 UI 交互：选中监控
+    function renderStudentList(users) {
+        if (myRole !== 'TEACHER') return;
+        const listDiv = document.getElementById('student-list');
+        listDiv.innerHTML = users
+            .filter(u => u.role === 'STUDENT')
+            .map(u => `
+                <div class="student-item ${selectedStudentId === u.userId ? 'active' : ''}" onclick="selectStudent('${u.userId}')">
+                    <span class="status-dot"></span>
+                    <div>
+                        <div style="font-size:14px">${u.userName}</div>
+                        <div style="font-size:11px; opacity:0.6">${u.userId}</div>
+                    </div>
+                </div>
+            `).join('');
+    }
+
+    function selectStudent(sid) {
+        selectedStudentId = sid;
+        // 重新渲染列表以显示选中状态
+        // 提示：实际应用中这里可以触发一个向服务器请求该学生当前状态的操作
+        alert(`开始监控学生: ${sid}`);
         
-        document.getElementById('guide-text').innerHTML = myRole === 'STUDENT' ? "请开始实验操作" : "请在左侧选择学生进行监控";
+        // 重新调用名单渲染以更新 UI 选中样式
+        // (注：这里可以通过重新获取名单或手动操作 DOM class)
+        const items = document.querySelectorAll('.student-item');
+        items.forEach(el => el.classList.remove('active'));
+        event.currentTarget.classList.add('active');
     }
 
-    // --- 2. 老师端逻辑 ---
-    function updateStudentList(users) {
-        if(myRole !== 'TEACHER') return;
-        const list = document.getElementById('student-list');
-        list.innerHTML = users.filter(u => u.role === 'STUDENT').map(u => `
-            <div class="student-item ${selectedStudentId === u.userId ? 'active' : ''}" onclick="selectStudent('${u.userId}')">
-                <span class="status-dot"></span> ${u.userName} (${u.userId})
-            </div>
-        `).join('');
-    }
-
-    function selectStudent(id) {
-        selectedStudentId = id;
-        document.getElementById('guide-text').innerHTML = `正在监控: ${id}`;
-        // 清空当前画面状态(略)
-        updateStudentList([]); // 刷新列表选中状态
-    }
-
-    function applyRemoteAction(deviceId, action) {
-        const device = devices[deviceId];
-        if(device) device.updateStatus(action);
-    }
-
-    // --- 3. 仿真核心 (Konva) ---
-    const stage = new Konva.Stage({ container: 'container', width: window.innerWidth, height: window.innerHeight });
+    // 4. 仿真核心 (Konva)
+    const stage = new Konva.Stage({ container: 'container', width: 800, height: 600 });
     const layer = new Konva.Layer();
     stage.add(layer);
 
@@ -125,40 +156,51 @@
     class Pump {
         constructor(id, x, y) {
             this.id = id;
+            this.status = 'OFF';
             this.group = new Konva.Group({ x, y, cursor: 'pointer' });
-            this.rect = new Konva.Rect({ width: 80, height: 60, fill: '#34495e', cornerRadius: 5 });
-            this.light = new Konva.Circle({ x: 20, y: 30, radius: 8, fill: 'red' });
-            this.group.add(this.rect, this.light, new Konva.Text({ text: id, x: 35, y: 25, fill: '#fff' }));
+            this.rect = new Konva.Rect({ width: 100, height: 60, fill: '#2c3e50', cornerRadius: 5 });
+            this.light = new Konva.Circle({ x: 20, y: 30, radius: 10, fill: 'red' });
+            this.label = new Konva.Text({ text: id, x: 40, y: 25, fill: 'white' });
             
-            this.group.on('click', () => {
-                if(myRole === 'TEACHER') return;
-                const newStatus = this.light.fill() === 'red' ? 'ON' : 'OFF';
-                this.updateStatus(newStatus);
-                ws.send(JSON.stringify({ studentId: myInfo.userId, deviceId: this.id, action: newStatus }));
-            });
+            this.group.add(this.rect, this.light, this.label);
+            this.group.on('click', () => this.onClick());
             devices[id] = this;
+            layer.add(this.group);
         }
-        updateStatus(status) {
-            this.light.fill(status === 'ON' ? '#2ecc71' : 'red');
+
+        onClick() {
+            if (myRole === 'TEACHER') return; // 老师不能点，只能看
+
+            this.status = this.status === 'OFF' ? 'ON' : 'OFF';
+            this.renderStatus();
+
+            // 发送操作：实现发布上传
+            if (ws && ws.readyState === WebSocket.OPEN) {
+                ws.send(JSON.stringify({
+                    type: "STUDENT_ACTION",
+                    fromStudent: myInfo.userId,
+                    deviceId: this.id,
+                    action: this.status
+                }));
+            }
+        }
+
+        renderStatus() {
+            this.light.fill(this.status === 'ON' ? '#2ecc71' : 'red');
             layer.draw();
         }
     }
 
-    layer.add(new Pump('PUMP_01', 400, 300).group);
+    // 初始化一个测试水泵
+    new Pump('PUMP_01', 100, 100);
     layer.draw();
 
-    // 指引面板拖拽
-    const guide = document.getElementById('guide');
-    const header = document.getElementById('guide-header');
-    header.onmousedown = (e) => {
-        let offsetX = e.clientX - guide.offsetLeft;
-        let offsetY = e.clientY - guide.offsetTop;
-        document.onmousemove = (ev) => {
-            guide.style.left = (ev.clientX - offsetX) + 'px';
-            guide.style.top = (ev.clientY - offsetY) + 'px';
-        };
-        document.onmouseup = () => document.onmousemove = null;
-    };
+    function applyAction(devId, action) {
+        if (devices[devId]) {
+            devices[devId].status = action;
+            devices[devId].renderStatus();
+        }
+    }
 </script>
 </body>
 </html>
