@@ -1,46 +1,34 @@
 :root { --primary: #3498db; --bg: #0b0e14; --panel: #1c222d; --accent: #f1c40f; --danger: #e74c3c; }
 body { margin: 0; padding: 0; background: #000; color: white; font-family: sans-serif; overflow: hidden; }
 
-/* 核心：强制旋转容器 */
-#app { 
-    display: flex; width: 100vw; height: 100vh; 
-    transition: transform 0.3s ease;
-}
-
-/* 移动端竖屏检测：强制旋转 90 度 */
+/* 强制横屏逻辑 */
+#app { display: flex; width: 100vw; height: 100vh; transition: transform 0.3s ease; }
 @media screen and (orientation: portrait) and (max-width: 1024px) {
-    #app {
-        width: 100vh; height: 100vw;
-        position: absolute; top: 0; left: 100vw;
-        transform: rotate(90deg); transform-origin: top left;
-    }
-    .login-box { transform: rotate(-90deg); } /* 登录框反向旋转保持垂直 */
+    #app { width: 100vh; height: 100vw; position: absolute; top: 0; left: 100vw; transform: rotate(90deg); transform-origin: top left; }
 }
 
 /* 侧边栏 */
-#sidebar { width: 200px; background: var(--panel); border-right: 1px solid #333; display: none; flex-direction: column; }
-#student-list { flex: 1; overflow-y: auto; background: #10151f; }
-.student-item { padding: 12px; border-bottom: 1px solid #2a3241; font-size: 13px; cursor: pointer; }
+#sidebar { width: 220px; background: var(--panel); border-right: 1px solid #333; display: none; flex-direction: column; }
+.sidebar-header { padding: 15px; background: #161b22; border-bottom: 1px solid #333; }
+#student-list { flex: 1; overflow-y: auto; }
+.student-item { padding: 12px; border-bottom: 1px solid #2a3241; cursor: pointer; transition: 0.2s; }
+.student-item:hover { background: #242c3d; }
 .student-item.active { background: #2980b9; border-left: 4px solid var(--accent); }
 
 /* 主区域 */
-#main { flex: 1; display: flex; flex-direction: column; position: relative; }
-#info-bar { 
-    height: 50px; background: var(--panel); display: flex; 
-    align-items: center; justify-content: space-between; padding: 0 15px; 
-    font-size: 12px; border-bottom: 2px solid var(--primary); 
-}
+#main { flex: 1; display: flex; flex-direction: column; }
+#info-bar { height: 55px; background: var(--panel); display: flex; align-items: center; justify-content: space-between; padding: 0 20px; border-bottom: 2px solid var(--primary); }
+.info-group { display: flex; align-items: center; gap: 15px; font-size: 13px; }
+.mode-btn-group { display: flex; background: #0b0e14; border-radius: 6px; padding: 3px; gap: 2px; }
+.mode-btn { border: none; background: none; color: #888; padding: 6px 12px; cursor: pointer; border-radius: 4px; font-size: 12px; }
+.mode-btn.active { background: var(--primary); color: white; font-weight: bold; }
 
-.mode-tag { color: var(--accent); font-weight: bold; background: #2c3e50; padding: 4px 10px; border-radius: 15px; }
-.btn-logout { background: var(--danger); border: none; color: white; padding: 5px 10px; border-radius: 4px; }
+#container { flex: 1; background: #000; touch-action: none; position: relative; }
+#status-bar { height: 30px; background: #161b22; display: flex; align-items: center; justify-content: center; font-size: 12px; color: #aaa; border-top: 1px solid #333; }
 
-/* 仿真区 */
-#container { flex: 1; background: #000; touch-action: none; }
-#status-bar { height: 25px; background: #161b22; font-size: 11px; display: flex; align-items: center; justify-content: center; color: #888; }
-
-/* 登录 */
+/* 登录框 */
 #login-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 2000; display: flex; align-items: center; justify-content: center; }
-.login-box { background: white; color: #333; padding: 20px; border-radius: 8px; width: 280px; }
-.login-box input, .login-box select { width: 100%; padding: 10px; margin: 8px 0; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box; font-size: 16px; }
-.btn-login { width: 100%; padding: 12px; background: var(--primary); color: white; border: none; border-radius: 4px; font-weight: bold; }
+.login-box { background: white; color: #333; padding: 30px; border-radius: 12px; width: 320px; }
+.login-box input, .login-box select { width: 100%; padding: 12px; margin: 10px 0; border: 1px solid #ddd; border-radius: 6px; box-sizing: border-box; }
+.btn-login { width: 100%; padding: 14px; background: var(--primary); color: white; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; margin-top: 10px; }
 .hide { display: none !important; }

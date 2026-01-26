@@ -3,13 +3,13 @@ import { SimulationEngine } from './simulation.js';
 
 const BASE_URL = "api.wangaijun.click";
 let myInfo, myRole, currentMode = 'TRAIN';
-window.selectedId = null;
+window.selectedStudentId = null;
 
 const engine = new SimulationEngine('container', (id, state) => {
     window.network.send({
         type: myRole === 'TEACHER' ? 'TE_OP' : 'ST_OP',
         mode: currentMode, deviceId: id, action: state,
-        from: myInfo.userId, to: window.selectedId
+        from: myInfo.userId, to: window.selectedStudentId
     });
 });
 
@@ -20,29 +20,45 @@ window.network = new NetworkManager(BASE_URL, (data) => {
         updateUI();
     }
     
-    // 逻辑分发
+    // 逻辑流：根据模式锁定或更新仿真设备
     if (myRole === 'STUDENT') {
+        const isTarget = data.to === myInfo.userId;
         if (currentMode === 'DEMO') {
             engine.isLocked = true;
+            if (data.type === 'TE_OP') engine.updateDevice(data.deviceId, data.action);
+        } else if (currentMode === 'PRACTICE') {
+            engine.isLocked = !isTarget; // 只有被选中的演练同学可以操作
             if (data.type === 'TE_OP') engine.updateDevice(data.deviceId, data.action);
         } else {
             engine.isLocked = false;
         }
-    } else {
-        if (currentMode === 'PRACTICE' && data.from === window.selectedId) {
+    } else { // 教师端逻辑
+        if (currentMode === 'PRACTICE' && data.from === window.selectedStudentId) {
             engine.updateDevice(data.deviceId, data.action);
         }
     }
 });
 
+// --- 教师特有：班级选择逻辑 ---
+window.onClassChange = (className) => {
+    myInfo.className = className;
+    localStorage.setItem('sim_v3_session', JSON.stringify({ role: myRole, info: myInfo }));
+    window.network.connect(myRole, myInfo); // 切换班级后重连
+};
+
 window.handleLogin = () => {
     const role = document.getElementById('uRole').value;
-    const info = { 
-        userName: document.getElementById('uName').value,
-        userId: role === 'STUDENT' ? document.getElementById('uSid').value : "T-"+Date.now(),
-        className: role === 'STUDENT' ? document.getElementById('uCls').value : "Lobby"
+    const name = document.getElementById('uName').value;
+    if (!name) return alert("请输入姓名");
+
+    const info = {
+        userName: name,
+        userId: role === 'STUDENT' ? document.getElementById('uSid').value : "T-" + Date.now(),
+        className: role === 'STUDENT' ? document.getElementById('uCls').value : "默认班级"
     };
+
     if (role === 'TEACHER' && document.getElementById('uCode').value !== '147258') return alert("邀请码错误");
+    
     localStorage.setItem('sim_v3_session', JSON.stringify({ role, info }));
     location.reload();
 };
@@ -56,14 +72,18 @@ window.setMode = (m) => {
 };
 
 window.selectStudent = (id, name) => {
-    window.selectedId = id;
-    document.getElementById('status-mid').innerText = `正在监控: ${name}`;
+    window.selectedStudentId = (window.selectedStudentId === id) ? null : id;
+    document.getElementById('status-mid').innerText = window.selectedStudentId ? `${name} 同学正在演练` : "请选择演练同学";
     renderStudents(window.allUsers || []);
 };
 
 function updateUI() {
-    const labels = { TRAIN: '自由训练', DEMO: '教师演示', PRACTICE: '学生演练' };
+    const modes = document.querySelectorAll('.mode-btn');
+    modes.forEach(btn => btn.classList.toggle('active', btn.dataset.mode === currentMode));
+    
+    const labels = { TRAIN: '自由训练模式', DEMO: '教师演示模式', PRACTICE: '演练模式' };
     document.getElementById('mode-display').innerText = labels[currentMode];
+    engine.isLocked = (myRole === 'STUDENT' && currentMode === 'DEMO');
 }
 
 function renderStudents(users) {
@@ -71,7 +91,7 @@ function renderStudents(users) {
     const list = document.getElementById('student-list');
     if (!list) return;
     list.innerHTML = users.filter(u => u.role === 'STUDENT').map(u => `
-        <div class="student-item ${window.selectedId === u.userId ? 'active' : ''}" 
+        <div class="student-item ${window.selectedStudentId === u.userId ? 'active' : ''}" 
              onclick="selectStudent('${u.userId}', '${u.userName}')">
             ${u.userName} (${u.userId})
         </div>
@@ -82,10 +102,17 @@ function renderStudents(users) {
 const session = JSON.parse(localStorage.getItem('sim_v3_session'));
 if (session) {
     myRole = session.role; myInfo = session.info;
-    document.getElementById('info-left').innerText = `${myInfo.userName} | ${myInfo.className}`;
+    document.getElementById('u-info-name').innerText = myInfo.userName;
+    document.getElementById('u-info-class').innerText = myInfo.className;
+
     if (myRole === 'TEACHER') {
         document.getElementById('sidebar').style.display = 'flex';
         document.getElementById('te-tools').classList.remove('hide');
+        // 加载班级列表并设置默认值
+        window.network.fetchClasses().then(classes => {
+            const sel = document.getElementById('classSel');
+            sel.innerHTML = classes.map(c => `<option value="${c}" ${c === myInfo.className ? 'selected' : ''}>${c}</option>`).join('');
+        });
     }
     window.network.connect(myRole, myInfo);
 } else {

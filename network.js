@@ -4,11 +4,16 @@ export class NetworkManager {
         this.onMessage = onMessage;
         this.ws = null;
     }
+    // 从 Worker 的 Durable Object 获取已注册的班级列表
     async fetchClasses() {
         try {
-            const res = await fetch(`https://${this.baseUrl}/get-classes`);
-            return await res.json();
-        } catch (e) { return ["教学班级01", "教学班级02"]; }
+            const res = await fetch(`https://${this.baseUrl}/get-classes?t=${Date.now()}`);
+            const data = await res.json();
+            return data && data.length > 0 ? data : ["默认班级"];
+        } catch (e) {
+            console.error("无法获取班级列表", e);
+            return ["默认班级"];
+        }
     }
     connect(role, info) {
         if (this.ws) this.ws.close();

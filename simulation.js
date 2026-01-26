@@ -22,19 +22,20 @@ export class SimulationEngine {
     }
 
     setupComponents() {
-        // 定义冷却系统核心组件
-        this.drawDevice('Engine', 50, 50, '#e67e22', '柴油机');
-        this.drawDevice('Pump', 50, 200, '#3498db', '水泵');
-        this.drawDevice('Valve', 300, 200, '#9b59b6', '三通调节阀');
-        this.drawDevice('Cooler', 300, 50, '#1abc9c', '淡水冷却器');
+        // 系统核心组件定义 (X, Y 坐标适配横屏视图)
+        this.drawDevice('Engine', 50, 80, '#e67e22', '主机柴油机');
+        this.drawDevice('Pump', 50, 250, '#3498db', '冷却水泵');
+        this.drawDevice('Valve', 350, 250, '#9b59b6', '电动三通调节阀');
+        this.drawDevice('Cooler', 350, 80, '#1abc9c', '淡水冷却器');
+        this.drawDevice('PID', 600, 160, '#2c3e50', '数字PID调节器');
         this.layer.draw();
     }
 
     drawDevice(id, x, y, color, label) {
-        const group = new Konva.Group({ x, y, id, draggable: true });
-        group.add(new Konva.Rect({ width: 100, height: 60, fill: color, stroke: '#fff', cornerRadius: 5 }));
-        group.add(new Konva.Text({ text: label, x: 5, y: 25, fill: 'white', fontSize: 12, fontStyle: 'bold' }));
-        const light = new Konva.Circle({ x: 90, y: 10, radius: 5, fill: 'red', name: 'status' });
+        const group = new Konva.Group({ x, y, id });
+        group.add(new Konva.Rect({ width: 140, height: 80, fill: color, stroke: '#fff', strokeWidth: 2, cornerRadius: 8 }));
+        group.add(new Konva.Text({ text: label, x: 10, y: 35, fill: 'white', fontSize: 13, fontStyle: 'bold', listening: false }));
+        const light = new Konva.Circle({ x: 125, y: 15, radius: 7, fill: 'red', name: 'status' });
         group.add(light);
 
         group.on('click tap', () => {

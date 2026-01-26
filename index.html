@@ -3,27 +3,32 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>云端仿真系统</title>
+    <title>船舶柴油机冷却仿真系统</title>
     <link rel="stylesheet" href="style.css">
     <script src="https://unpkg.com/konva@9/konva.min.js"></script>
 </head>
 <body>
     <div id="app">
         <div id="sidebar">
-            <div style="padding:10px; border-bottom:1px solid #333">
-                <select id="classSel" style="width:100%"><option>选择班级...</option></select>
+            <div class="sidebar-header">
+                <select id="classSel" onchange="onClassChange(this.value)" style="width:100%"></select>
             </div>
             <div id="student-list"></div>
         </div>
         
         <div id="main">
             <div id="info-bar">
-                <div id="info-left">加载中...</div>
-                <div id="mode-display" class="mode-tag">自由训练</div>
-                <div id="te-tools" class="hide">
-                    <button onclick="setMode('PRACTICE')">演练</button>
-                    <button onclick="setMode('DEMO')">演示</button>
-                    <button onclick="setMode('TRAIN')">训练</button>
+                <div class="info-group">
+                    <span id="u-info-name">加载中</span> | <span id="u-info-class">...</span>
+                    <span style="color:#2ecc71">● 在线</span>
+                </div>
+                
+                <div id="mode-display" class="mode-btn-group" style="color:#f1c40f; font-weight:bold; background:none;">自由训练模式</div>
+                
+                <div id="te-tools" class="mode-btn-group hide">
+                    <button class="mode-btn" data-mode="PRACTICE" onclick="setMode('PRACTICE')">演练</button>
+                    <button class="mode-btn" data-mode="DEMO" onclick="setMode('DEMO')">演示</button>
+                    <button class="mode-btn active" data-mode="TRAIN" onclick="setMode('TRAIN')">训练</button>
                 </div>
                 <button class="btn-logout" onclick="logout()">注销</button>
             </div>
@@ -36,20 +41,20 @@
 
     <div id="login-overlay" style="display:none">
         <div class="login-box">
-            <h3 style="margin:0 0 15px 0">仿真登录</h3>
+            <h3>系统登录</h3>
             <select id="uRole" onchange="document.getElementById('s-only').className=(this.value==='TEACHER'?'hide':''); document.getElementById('t-only').className=(this.value==='STUDENT'?'hide':'');">
-                <option value="STUDENT">学生</option>
-                <option value="TEACHER">老师</option>
+                <option value="STUDENT">我是学生</option>
+                <option value="TEACHER">我是教师</option>
             </select>
             <input type="text" id="uName" placeholder="姓名">
             <div id="s-only">
-                <input type="text" id="uCls" placeholder="班级">
+                <input type="text" id="uCls" placeholder="请输入班级名称">
                 <input type="text" id="uSid" placeholder="学号">
             </div>
             <div id="t-only" class="hide">
                 <input type="password" id="uCode" placeholder="教师邀请码">
             </div>
-            <button class="btn-login" onclick="handleLogin()">进入</button>
+            <button class="btn-login" onclick="handleLogin()">登录进入系统</button>
         </div>
     </div>
     <script type="module" src="main.js"></script>
