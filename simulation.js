@@ -3,7 +3,9 @@ export class SimulationEngine {
     constructor(containerId, onAction) {
         this.container = document.getElementById(containerId);
         /* 仿真对象都在画布上，根据这个画布创建舞台，添加图层，设备都在图层上， */
-        this.stage = new Konva.Stage({ container: containerId, width: 800, height: 600 });
+        this.stage = new Konva.Stage({ container: containerId, 
+            width: this.container.offsetWidth, height: this.container.offsetHeight 
+        });
         this.layer = new Konva.Layer();
         this.stage.add(this.layer);
         /*这是设备操作的主处理逻辑函数，由main.js定义*/
@@ -14,8 +16,30 @@ export class SimulationEngine {
         /*构造函数里面，一般会调用初始化函数 */
         this.init();
     }
+    // 关键修复：重写 Konva 的内容坐标获取方式
+    getRelativePointerPosition() {
+        const pos = this.stage.getPointerPosition();
+        if (!pos) return null;
 
+        // 检测是否处于手机竖屏触发了 CSS 旋转
+        const isPortrait = window.innerHeight > window.innerWidth && window.innerWidth < 1024;
+        
+        if (isPortrait) {
+            // 这里的逻辑需要匹配你 CSS 旋转的中心点
+            // 如果 CSS 旋转了 90 度，坐标需要手动映射
+            return {
+                x: pos.y, 
+                y: this.stage.width() - pos.x
+            };
+        }
+        return pos;
+    }
     init() {
+        // 创建背景层拦截点击，测试坐标
+        const bg = new Konva.Rect({
+            width: 2000, height: 2000, fill: '#000'
+        });
+        this.layer.add(bg);
         // 创建船舶柴油机冷却水系统组件
         this.createComp('Diesel', 50, 80, '#e67e22', '柴油机');
         this.createComp('Pump', 50, 250, '#3498db', '主淡水泵');
@@ -42,8 +66,11 @@ export class SimulationEngine {
         const light = new Konva.Circle({ x: 135, y: 15, radius: 6, fill: 'red', name: 'status' });
         group.add(light);
         /*为组件定义点击处理函数，首先功能设备主要是启停，设置work属性，OFF表示停止，ON表示正在工作，点击后状态取反，存入newState,调用状态更新函数和用户定义的函数。状态更新函数是改变设备本身的显示状态。 */
-        group.on('click tap', () => {
+        // 使用自定义点击检测
+        group.on('click tap', (e) => {
             if (this.isLocked) return;
+            // 阻止冒泡，防止多重触发
+            e.cancelBubble = true;
             const newState = group.getAttr('work') === 'ON' ? 'OFF' : 'ON';
             this.updateState(id, newState);
             this.onAction(id, newState);

@@ -4,8 +4,23 @@ body { margin: 0; padding: 0; background:var(--bg); color: var(--text); font-fam
 /*禁止滚动条*/
 /* 手机竖屏自动转横屏逻辑，弹性布局 */
 #app { display: flex; width: 100vw; height: 100vh; }
+/* 修改 app 旋转逻辑，确保旋转中心在左上角 */
 @media screen and (orientation: portrait) and (max-width: 1024px) {
-    #app { width: 100dvh; height: 100dvw; position: absolute; top: 0; left: 100vw; transform: rotate(90deg); transform-origin: top left; }
+    #app { 
+        width: 100vh; 
+        height: 100vw; 
+        position: absolute; 
+        top: 0; 
+        left: 100vw; 
+        transform: rotate(90deg); 
+        transform-origin: 0 0; /* 必须固定原点 */
+        overflow: hidden;
+    }
+    
+    /* 登录框需要反向旋转回来，否则没法打字 */
+    .login-box {
+        transform: rotate(-90deg);
+    }
 }
 /* 3个条件：屏幕、竖屏、排除PC ，宽度变高度，高度变宽度，left移动到屏幕右边，以左顶点为中心，顺时针旋转90度，强制横屏显示，手机有效*/
 /* sidebar 内部子元素 纵向排列 ，右边一条灰色边界线*/

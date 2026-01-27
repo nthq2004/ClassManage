@@ -38,7 +38,7 @@ export class NetworkManager {
         if (this.ws) this.ws.close();
         const protocol = window.location.protocol === 'https:' ? 'wss' : 'ws';
         const params = new URLSearchParams({ role, info: JSON.stringify(info) });
-        /*此刻发生的网络事件（重要）：TCP 三次握手,HTTP Upgrade 请求,切换为 WebSocket 协议 */
+        /*此刻发生的网络事件（重要）：TCP 三次握手,HTTP Upgrade 请求,切换为 WebSocket 协议 ,传递的参数是 角色和 用户信息（班级、姓名、学号）*/
         this.ws = new WebSocket(`${protocol}://${this.baseUrl}?${params.toString()}`);
         /*main.js要定义一个网络消息处理函数，挂载在ws上，处理ws服务器端(worker.js)传回来的消息 */
         this.ws.onmessage = (e) => this.onMessage(JSON.parse(e.data));

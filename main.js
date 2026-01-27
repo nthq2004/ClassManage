@@ -152,3 +152,8 @@ if (saved) {
 } else {
     document.getElementById('login-overlay').style.display = 'flex';
 }
+
+// 在 main.js 中，确保针对 Touch 事件做了优化
+document.addEventListener('touchstart', function(e) {
+    if(e.touches.length > 1) e.preventDefault(); // 禁止多指缩放干扰坐标
+}, {passive: false});
