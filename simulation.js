@@ -3,8 +3,10 @@ export class SimulationEngine {
     constructor(containerId, onAction) {
         this.container = document.getElementById(containerId);
         /* 仿真对象都在画布上，根据这个画布创建舞台，添加图层，设备都在图层上， */
-        this.stage = new Konva.Stage({ container: containerId, 
-            width: this.container.offsetWidth, height: this.container.offsetHeight 
+        this.stage = new Konva.Stage({
+            container: containerId,
+            width: this.container.offsetWidth || 800,
+            height: this.container.offsetHeight || 600
         });
         this.layer = new Konva.Layer();
         this.stage.add(this.layer);
@@ -55,8 +57,24 @@ export class SimulationEngine {
         this.createActionBtn('Fault', 460, 500, '#e74c3c', '故障设置');
         
         this.layer.draw();
+        // 关键修复：延迟 100ms 强制二次适配，确保布局已生效
+        setTimeout(() => this.fit(), 100);
         window.addEventListener('resize', () => this.fit());
     }
+
+    fit() {
+        if (!this.container) return;
+        const w = this.container.offsetWidth;
+        const h = this.container.offsetHeight;
+        
+        // 如果高度仍为 0，说明 CSS 布局有问题
+        if (h === 0) console.warn("Canvas container height is 0. Check CSS Flexbox.");
+        
+        this.stage.width(w);
+        this.stage.height(h);
+        this.layer.batchDraw();
+    }
+
     /*每一个功能设备都是一个group，典型包括外壳、小组件、文字等，name属性用.查找，代表一类设备或一类属性，id属性用#查找，代表独一无二节点 */
     createComp(id, x, y, color, label) {
         const group = new Konva.Group({ x, y, id, name: 'device' });
