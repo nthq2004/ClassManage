@@ -46,9 +46,17 @@ window.network = new NetworkManager(BASE_URL, (data) => {
 });
 
 // UI 操作函数，注册界面，根据角色切换显示，window.toggleFields(role)方法
+// --- 登录逻辑修复 ---
 window.toggleFields = (role) => {
-    document.getElementById('st-fields').classList.toggle('hide', role === 'TEACHER');
-    document.getElementById('te-fields').classList.toggle('hide', role === 'STUDENT');
+    const stFields = document.getElementById('st-fields');
+    const teFields = document.getElementById('te-fields');
+    if (role === 'TEACHER') {
+        stFields.classList.add('hide');
+        teFields.classList.remove('hide');
+    } else {
+        stFields.classList.remove('hide');
+        teFields.classList.add('hide');
+    }
 };
 
 //window.dologin()方法。在登录界面上调用，存储role和info到本地，重新加载。
@@ -121,38 +129,47 @@ function renderUserList(users) {
     if (!list) return;
     list.innerHTML = users.filter(u => u.role === 'STUDENT').map(u => `
         <div class="student-item ${window.selectedSid === u.userId ? 'active' : ''}" 
+             style="padding: 15px 10px;"
              onclick="selectStudent('${u.userId}', '${u.userName}')">
-            ${u.userName} (${u.userId})
+            <div style="font-weight:bold">${u.userName}</div>
+            <div style="font-size:10px; opacity:0.6">${u.userId}</div>
         </div>
     `).join('');
 }
 
-// 全局变量，启动入口
-const saved = localStorage.getItem('marine_sim_v3');
-if (saved) {
-    const session = JSON.parse(saved);
-    myRole = session.role; myInfo = session.info;
-    //信息栏左侧的班级和用户名显示
-    document.getElementById('u-name').innerText = myInfo.userName;
-    document.getElementById('u-class').innerText = myInfo.className;
+// --- 初始化与入口 ---
+document.addEventListener('DOMContentLoaded', () => {
+    const saved = localStorage.getItem('marine_sim_v3');
     
-    if (myRole === 'TEACHER') {
-        //教师端要显示左侧栏和信息栏中的模式选择
-        document.getElementById('sidebar').classList.remove('hide');
-        document.getElementById('te-tools').classList.remove('hide');
-        //启动时，要读取全局注册对象中的班级列表，并显示保存在选择框里面。
-        window.network.fetchClasses().then(list => {
-            const sel = document.getElementById('clsSel');
-            sel.innerHTML = list.map(c => `<option value="${c}" ${c === myInfo.className ? 'selected' : ''}>${c}</option>`).join('');
-        });
-    }
-    //根据本地存储信息与服务器端建立WebSocket连接，初始化显示，默认为自由训练模式
-    window.network.connect(myRole, myInfo);
-    updateUI();
-} else {
-    document.getElementById('login-overlay').style.display = 'flex';
-}
+    if (saved) {
+        const session = JSON.parse(saved);
+        myRole = session.role; 
+        myInfo = session.info;
+        
+        // 渲染基础信息
+        document.getElementById('u-name').innerText = myInfo.userName;
+        document.getElementById('u-class').innerText = myInfo.className;
 
+        if (myRole === 'TEACHER') {
+            const sidebar = document.getElementById('sidebar');
+            const teTools = document.getElementById('te-tools');
+            sidebar.classList.remove('hide');
+            sidebar.style.display = 'flex'; // 强制显示
+            teTools.classList.remove('hide');
+            
+            // 加载班级列表
+            window.network.fetchClasses().then(list => {
+                const sel = document.getElementById('clsSel');
+                sel.innerHTML = list.map(c => `<option value="${c}" ${c === myInfo.className ? 'selected' : ''}>${c}</option>`).join('');
+            });
+        }
+        
+        // 启动连接
+        window.network.connect(myRole, myInfo);
+    } else {
+        document.getElementById('login-overlay').style.display = 'flex';
+    }
+});
 // 在 main.js 中，确保针对 Touch 事件做了优化
 document.addEventListener('touchstart', function(e) {
     if(e.touches.length > 1) e.preventDefault(); // 禁止多指缩放干扰坐标

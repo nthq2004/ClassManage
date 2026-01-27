@@ -4,6 +4,8 @@ body { margin: 0; padding: 0; background:var(--bg); color: var(--text); font-fam
 /*禁止滚动条*/
 /* 手机竖屏自动转横屏逻辑，弹性布局 */
 #app { display: flex; width: 100vw; height: 100vh; }
+/* 确保 hide 类能彻底隐藏元素 */
+.hide { display: none !important; }
 /* 修改 app 旋转逻辑，确保旋转中心在左上角 */
 @media screen and (orientation: portrait) and (max-width: 1024px) {
     #app { 
@@ -16,7 +18,25 @@ body { margin: 0; padding: 0; background:var(--bg); color: var(--text); font-fam
         transform-origin: 0 0; /* 必须固定原点 */
         overflow: hidden;
     }
-    
+    #sidebar {
+        width: 140px; /* 从 220px 降至 140px */
+        font-size: 12px;
+    }
+
+    #sidebar select {
+        font-size: 12px;
+    }
+
+    /* 模式切换文字缩写，节省空间 */
+    .m-btn {
+        padding: 5px 6px;
+        font-size: 11px;
+    }
+
+    /* 状态栏在手机上隐藏非核心信息 */
+    #status-left, #status-right {
+        display: none;
+    }    
     /* 登录框需要反向旋转回来，否则没法打字 */
     .login-box {
         transform: rotate(-90deg);
@@ -42,10 +62,10 @@ body { margin: 0; padding: 0; background:var(--bg); color: var(--text); font-fam
 .student-item { padding: 12px; border-bottom: 1px solid #2a3341; cursor: pointer; }
 .student-item.active { background: #1a4a75; border-left: 4px solid #f1c40f; }
 /*inset: 0覆盖整个屏幕，background: rgba(0,0,0,0.9)，半透明几乎不可见，最顶层：普通面板：1～10。浮窗：100。全屏遮罩：1000 起步，登录框永远居中显示*/
+
 #login-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 1000; display: flex; align-items: center; justify-content: center; }
 /*margin: 8px 0,输入项之间留间距*/
 .login-box { background: #fff; padding: 30px; border-radius: 12px; width: 300px; color: #333; }
 .login-box input, .login-box select { width: 100%; margin: 8px 0; padding: 10px; border: 1px solid #ccc; border-radius: 6px; }
 .btn-primary { width: 100%; padding: 12px; background: var(--primary); color: #fff; border: none; border-radius: 6px; cursor: pointer; }
-/*任何元素，只要在class list 添加这个类属性，将被隐藏*/
-.hide { display: none !important; }
+/*.hide { display: none !important; }任何元素，只要在class list 添加这个类属性，将被隐藏*/
