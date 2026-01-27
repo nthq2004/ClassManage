@@ -15,7 +15,7 @@ export class NetworkManager {
             Content-Length: 42
 
             {"user":"admin","password":"123456"}*/
-            const res = await fetch(`https://${this.baseUrl}/get-classes?t=${Date.now()}`);
+            const res = await fetch(`https://${this.baseUrl}/get-classes`);
             /*json函数将Response对象解析成json对象：
             Response {
                 status: 200,
@@ -51,4 +51,5 @@ export class NetworkManager {
         JSON.stringify(obj); '{"a":1,"b":"hello","c":true}'这是字符串  */
         if (this.ws?.readyState === 1) this.ws.send(JSON.stringify(data));
     }
+
 }
