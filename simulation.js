@@ -1,59 +1,85 @@
+/*对外声明的类，构造时要传入画布ID，和处理函数，所有的仿真对象都包含在这个文件 */
 export class SimulationEngine {
     constructor(containerId, onAction) {
         this.container = document.getElementById(containerId);
-        this.stage = new Konva.Stage({
-            container: containerId,
-            width: this.container.offsetWidth,
-            height: this.container.offsetHeight
-        });
+        /* 仿真对象都在画布上，根据这个画布创建舞台，添加图层，设备都在图层上， */
+        this.stage = new Konva.Stage({ container: containerId, width: 800, height: 600 });
         this.layer = new Konva.Layer();
         this.stage.add(this.layer);
+        /*这是设备操作的主处理逻辑函数，由main.js定义*/
         this.onAction = onAction;
         this.isLocked = false;
-        
-        this.setupComponents();
-        window.addEventListener('resize', () => this.fitStage());
+        /*这是设备对象数组，每个设备都是一个group，可根据id找到对应设备的group，devices[Pump]就获得Pump的group，可对group内的组件（圆形、矩形、线条）进行操作 */
+        this.devices = {};
+        /*构造函数里面，一般会调用初始化函数 */
+        this.init();
     }
 
-    fitStage() {
-        this.stage.width(this.container.offsetWidth);
-        this.stage.height(this.container.offsetHeight);
+    init() {
+        // 创建船舶柴油机冷却水系统组件
+        this.createComp('Diesel', 50, 80, '#e67e22', '柴油机');
+        this.createComp('Pump', 50, 250, '#3498db', '主淡水泵');
+        this.createComp('Cooler', 300, 80, '#1abc9c', '淡水冷却器');
+        this.createComp('Valve', 300, 250, '#9b59b6', '电动三通调节阀');
+        this.createComp('PID', 550, 80, '#2c3e50', '数字PID控制器');
+        this.createComp('Transmitter', 550, 250, '#7f8c8d', '温度变送器');
+        
+        // 功能控制组
+        this.createActionBtn('Pipe', 10, 500, '#27ae60', '自动连管');
+        this.createActionBtn('Wire', 160, 500, '#27ae60', '自动接线');
+        this.createActionBtn('Load', 310, 500, '#f39c12', '负荷设置');
+        this.createActionBtn('Fault', 460, 500, '#e74c3c', '故障设置');
+        
+        this.layer.draw();
+        window.addEventListener('resize', () => this.fit());
+    }
+    /*每一个功能设备都是一个group，典型包括外壳、小组件、文字等，name属性用.查找，代表一类设备或一类属性，id属性用#查找，代表独一无二节点 */
+    createComp(id, x, y, color, label) {
+        const group = new Konva.Group({ x, y, id, name: 'device' });
+        group.add(new Konva.Rect({ width: 150, height: 90, fill: color, stroke: '#fff', cornerRadius: 5 }));
+        /*listening: false,不参与点击事件，Canvas不会进行命中检测 */
+        group.add(new Konva.Text({ text: label, x: 10, y: 35, fill: '#fff', fontStyle: 'bold', listening: false }));
+        const light = new Konva.Circle({ x: 135, y: 15, radius: 6, fill: 'red', name: 'status' });
+        group.add(light);
+        /*为组件定义点击处理函数，首先功能设备主要是启停，设置work属性，OFF表示停止，ON表示正在工作，点击后状态取反，存入newState,调用状态更新函数和用户定义的函数。状态更新函数是改变设备本身的显示状态。 */
+        group.on('click tap', () => {
+            if (this.isLocked) return;
+            const newState = group.getAttr('work') === 'ON' ? 'OFF' : 'ON';
+            this.updateState(id, newState);
+            this.onAction(id, newState);
+        });
+        this.layer.add(group);
+        /*有了以下指令，根据仿真系统对象，可根据id访问所有的设备group */
+        this.devices[id] = group;
+    }
+
+    createActionBtn(id, x, y, color, label) {
+        /*这些是功能按键，不是设备，没有device的name属性 */
+        const btn = new Konva.Group({ x, y, id });
+        btn.add(new Konva.Rect({ width: 130, height: 40, fill: color, cornerRadius: 20 }));
+        btn.add(new Konva.Text({ text: label, x: 35, y: 14, fill: '#fff', listening: false }));
+        btn.on('click tap', () => {
+            if (this.isLocked) return;
+            /*告诉main.js这个功能按键被点击了，完全交给外面处理 */
+            this.onAction(id, 'TRIGGER');
+        });
+        this.layer.add(btn);
+    }
+
+    updateState(id, state) {
+        const node = this.stage.findOne('#' + id);
+        if (!node) return;
+        /*点击后，更新该设备的状态 */
+        node.setAttr('work', state);
+        /*设备都有name属性为status的状态灯 */
+        const light = node.findOne('.status');
+        if (light) light.fill(state === 'ON' ? '#2ecc71' : 'red');
         this.layer.batchDraw();
     }
 
-    setupComponents() {
-        // 系统核心组件定义 (X, Y 坐标适配横屏视图)
-        this.drawDevice('Engine', 50, 80, '#e67e22', '主机柴油机');
-        this.drawDevice('Pump', 50, 250, '#3498db', '冷却水泵');
-        this.drawDevice('Valve', 350, 250, '#9b59b6', '电动三通调节阀');
-        this.drawDevice('Cooler', 350, 80, '#1abc9c', '淡水冷却器');
-        this.drawDevice('PID', 600, 160, '#2c3e50', '数字PID调节器');
-        this.layer.draw();
-    }
-
-    drawDevice(id, x, y, color, label) {
-        const group = new Konva.Group({ x, y, id });
-        group.add(new Konva.Rect({ width: 140, height: 80, fill: color, stroke: '#fff', strokeWidth: 2, cornerRadius: 8 }));
-        group.add(new Konva.Text({ text: label, x: 10, y: 35, fill: 'white', fontSize: 13, fontStyle: 'bold', listening: false }));
-        const light = new Konva.Circle({ x: 125, y: 15, radius: 7, fill: 'red', name: 'status' });
-        group.add(light);
-
-        group.on('click tap', () => {
-            if (this.isLocked) return;
-            const state = group.getAttr('work') === 'ON' ? 'OFF' : 'ON';
-            this.updateDevice(id, state);
-            this.onAction(id, state);
-        });
-
-        this.layer.add(group);
-    }
-
-    updateDevice(id, state) {
-        const dev = this.stage.findOne('#' + id);
-        if (dev) {
-            dev.setAttr('work', state);
-            dev.findOne('.status').fill(state === 'ON' ? '#2ecc71' : 'red');
-            this.layer.batchDraw();
-        }
+    fit() {
+        const container = this.container;
+        this.stage.width(container.offsetWidth);
+        this.stage.height(container.offsetHeight);
     }
 }

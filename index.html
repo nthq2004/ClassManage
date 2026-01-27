@@ -1,62 +1,68 @@
 <!DOCTYPE html>
-<html>
+<html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>船舶柴油机冷却仿真系统</title>
+    <title>船舶柴油机冷却水仿真系统</title>
     <link rel="stylesheet" href="style.css">
     <script src="https://unpkg.com/konva@9/konva.min.js"></script>
 </head>
 <body>
-    <div id="app">
-        <div id="sidebar">
+    <div id="app">  <!--这是主界面-->
+        <div id="sidebar" class="hide">  <!---->这是侧边栏
             <div class="sidebar-header">
-                <select id="classSel" onchange="onClassChange(this.value)" style="width:100%"></select>
+                <label>班级选择</label>
+                <select id="clsSel" onchange="onClassChange(this.value)"></select>
             </div>
-            <div id="student-list"></div>
+            <div id="student-list-container">
+                <div class="list-title">在线学生列表</div>
+                <div id="student-list"></div>
+            </div>
         </div>
-        
-        <div id="main">
-            <div id="info-bar">
-                <div class="info-group">
-                    <span id="u-info-name">加载中</span> | <span id="u-info-class">...</span>
-                    <span style="color:#2ecc71">● 在线</span>
+
+        <div id="main">  <!--这是主显示区-->
+            <div id="info-bar">  <!--这是信息栏-->
+                <div class="info-left">  <!--左侧显示 班级、姓名、在线-->
+                    <span id="u-class">---</span> | <span id="u-name">---</span>
+                    <span class="status-dot">● 在线</span>
                 </div>
-                
-                <div id="mode-display" class="mode-btn-group" style="color:#f1c40f; font-weight:bold; background:none;">自由训练模式</div>
-                
-                <div id="te-tools" class="mode-btn-group hide">
-                    <button class="mode-btn" data-mode="PRACTICE" onclick="setMode('PRACTICE')">演练</button>
-                    <button class="mode-btn" data-mode="DEMO" onclick="setMode('DEMO')">演示</button>
-                    <button class="mode-btn active" data-mode="TRAIN" onclick="setMode('TRAIN')">训练</button>
+                <div id="mode-display" class="mode-tag">训练模式</div>
+                <div id="te-tools" class="mode-switcher hide">  <!--3个按钮控制工作模式-->
+                    <button class="m-btn" onclick="setMode('PRACTICE')">演练</button>
+                    <button class="m-btn" onclick="setMode('DEMO')">演示</button>
+                    <button class="m-btn active" onclick="setMode('TRAIN')">训练</button>
                 </div>
-                <button class="btn-logout" onclick="logout()">注销</button>
+                <button class="btn-logout" onclick="logout()">注销系统</button>
             </div>
-            <div id="container"></div>
-            <div id="status-bar">
-                <span id="status-mid">系统准备就绪</span>
+
+            <div id="container"></div>   <!--这是画布，画仿真系统-->
+
+            <div id="status-bar">    <!--这是底部状态栏-->
+                <div id="status-left">系统就绪</div>
+                <div id="status-mid">准备中...</div>
+                <div id="status-right">V3.5 Engine</div>
             </div>
         </div>
     </div>
 
-    <div id="login-overlay" style="display:none">
+    <div id="login-overlay" style="display:none"><!--这是注册界面-->
         <div class="login-box">
-            <h3>系统登录</h3>
-            <select id="uRole" onchange="document.getElementById('s-only').className=(this.value==='TEACHER'?'hide':''); document.getElementById('t-only').className=(this.value==='STUDENT'?'hide':'');">
+            <h2>仿真系统登录</h2>
+            <select id="roleSel" onchange="toggleFields(this.value)"> <!--这是角色选择-->
                 <option value="STUDENT">我是学生</option>
                 <option value="TEACHER">我是教师</option>
             </select>
-            <input type="text" id="uName" placeholder="姓名">
-            <div id="s-only">
-                <input type="text" id="uCls" placeholder="请输入班级名称">
-                <input type="text" id="uSid" placeholder="学号">
+            <input type="text" id="loginName" placeholder="输入姓名">
+            <div id="st-fields">
+                <input type="text" id="loginClass" placeholder="输入班级 (新班级将自动注册)">
+                <input type="text" id="loginSid" placeholder="输入学号">
             </div>
-            <div id="t-only" class="hide">
-                <input type="password" id="uCode" placeholder="教师邀请码">
+            <div id="te-fields" class="hide">
+                <input type="password" id="teCode" placeholder="教师邀请码">
             </div>
-            <button class="btn-login" onclick="handleLogin()">登录进入系统</button>
+            <button class="btn-primary" onclick="doLogin()">进入系统</button>
         </div>
     </div>
-    <script type="module" src="main.js"></script>
+    <script type="module" src="main.js"></script>  <!--这是主程序-->
 </body>
 </html>

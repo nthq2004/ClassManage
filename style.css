@@ -1,34 +1,36 @@
-:root { --primary: #3498db; --bg: #0b0e14; --panel: #1c222d; --accent: #f1c40f; --danger: #e74c3c; }
-body { margin: 0; padding: 0; background: #000; color: white; font-family: sans-serif; overflow: hidden; }
-
-/* 强制横屏逻辑 */
-#app { display: flex; width: 100vw; height: 100vh; transition: transform 0.3s ease; }
+:root { --primary: #3498db; --bg: #727885; --panel: #a6c1a1; --text: #f6f8f9; } 
+/*:root { --xxx }= 整个网页的“设计参数表 / 主题配置中心”*/
+body { margin: 0; padding: 0; background:var(--bg); color: var(--text); font-family: system-ui; overflow: hidden; }
+/*禁止滚动条*/
+/* 手机竖屏自动转横屏逻辑，弹性布局 */
+#app { display: flex; width: 100vw; height: 100vh; }
 @media screen and (orientation: portrait) and (max-width: 1024px) {
-    #app { width: 100vh; height: 100vw; position: absolute; top: 0; left: 100vw; transform: rotate(90deg); transform-origin: top left; }
+    #app { width: 100dvh; height: 100dvw; position: absolute; top: 0; left: 100vw; transform: rotate(90deg); transform-origin: top left; }
 }
-
-/* 侧边栏 */
-#sidebar { width: 220px; background: var(--panel); border-right: 1px solid #333; display: none; flex-direction: column; }
-.sidebar-header { padding: 15px; background: #161b22; border-bottom: 1px solid #333; }
-#student-list { flex: 1; overflow-y: auto; }
-.student-item { padding: 12px; border-bottom: 1px solid #2a3241; cursor: pointer; transition: 0.2s; }
-.student-item:hover { background: #242c3d; }
-.student-item.active { background: #2980b9; border-left: 4px solid var(--accent); }
-
-/* 主区域 */
+/* 3个条件：屏幕、竖屏、排除PC ，宽度变高度，高度变宽度，left移动到屏幕右边，以左顶点为中心，顺时针旋转90度，强制横屏显示，手机有效*/
+/* sidebar 内部子元素 纵向排列 ，右边一条灰色边界线*/
+#sidebar { width: 220px; background: var(--panel); border-right: 1px solid #333; flex-direction: column; }
+/*lex: 1--占据父容器中除固定宽度元素外的所有剩余空间，flex-direction: column子元素纵向排列，默认是水平排列*/
 #main { flex: 1; display: flex; flex-direction: column; }
-#info-bar { height: 55px; background: var(--panel); display: flex; align-items: center; justify-content: space-between; padding: 0 20px; border-bottom: 2px solid var(--primary); }
-.info-group { display: flex; align-items: center; gap: 15px; font-size: 13px; }
-.mode-btn-group { display: flex; background: #0b0e14; border-radius: 6px; padding: 3px; gap: 2px; }
-.mode-btn { border: none; background: none; color: #888; padding: 6px 12px; cursor: pointer; border-radius: 4px; font-size: 12px; }
-.mode-btn.active { background: var(--primary); color: white; font-weight: bold; }
+/*左一组，右一组，中间留空,左右内边距 15px,内容不贴边*/
+#info-bar { height: 50px; background: var(--panel); border-bottom: 2px solid var(--primary); display: flex; align-items: center; justify-content: space-between; padding: 0 15px; }
+/*justify-content: space-between几个组件等距离、留空排列*/
+#status-bar { height: 30px; background: #10141b; border-top: 1px solid #333; display: flex; align-items: center; justify-content: space-between; padding: 0 15px; font-size: 12px; color: #888; }
 
-#container { flex: 1; background: #000; touch-action: none; position: relative; }
-#status-bar { height: 30px; background: #161b22; display: flex; align-items: center; justify-content: center; font-size: 12px; color: #aaa; border-top: 1px solid #333; }
+/* 模式切换按钮，水平分布，圆角6px，里面的按钮，无border，无背景色，手型鼠标代表可点击，激活时背景变主色，文字为白色粗体 */
+.mode-switcher { display: flex; background: #000; padding: 3px; border-radius: 6px; }
+.m-btn { border: none; background: none; color: #666; padding: 5px 12px; cursor: pointer; font-size: 12px; }
+.m-btn.active { background: var(--primary); color: #fff; border-radius: 4px; font-weight: bold; }
+.mode-tag { color: #f1c40f; font-weight: bold; font-size: 13px; }
 
-/* 登录框 */
-#login-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 2000; display: flex; align-items: center; justify-content: center; }
-.login-box { background: white; color: #333; padding: 30px; border-radius: 12px; width: 320px; }
-.login-box input, .login-box select { width: 100%; padding: 12px; margin: 10px 0; border: 1px solid #ddd; border-radius: 6px; box-sizing: border-box; }
-.btn-login { width: 100%; padding: 14px; background: var(--primary); color: white; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; margin-top: 10px; }
+/* 在线学生列表 */
+.student-item { padding: 12px; border-bottom: 1px solid #2a3341; cursor: pointer; }
+.student-item.active { background: #1a4a75; border-left: 4px solid #f1c40f; }
+/*inset: 0覆盖整个屏幕，background: rgba(0,0,0,0.9)，半透明几乎不可见，最顶层：普通面板：1～10。浮窗：100。全屏遮罩：1000 起步，登录框永远居中显示*/
+#login-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 1000; display: flex; align-items: center; justify-content: center; }
+/*margin: 8px 0,输入项之间留间距*/
+.login-box { background: #fff; padding: 30px; border-radius: 12px; width: 300px; color: #333; }
+.login-box input, .login-box select { width: 100%; margin: 8px 0; padding: 10px; border: 1px solid #ccc; border-radius: 6px; }
+.btn-primary { width: 100%; padding: 12px; background: var(--primary); color: #fff; border: none; border-radius: 6px; cursor: pointer; }
+/*任何元素，只要在class list 添加这个类属性，将被隐藏*/
 .hide { display: none !important; }
