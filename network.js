@@ -51,5 +51,4 @@ export class NetworkManager {
         JSON.stringify(obj); '{"a":1,"b":"hello","c":true}'这是字符串  */
         if (this.ws?.readyState === 1) this.ws.send(JSON.stringify(data));
     }
-
 }

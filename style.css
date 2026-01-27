@@ -7,28 +7,18 @@ body { margin: 0; padding: 0; background:var(--bg); color: var(--text); font-fam
 /* 确保 hide 类能彻底隐藏元素 */
 .hide { display: none !important; }
 
-/* 强制旋转逻辑：原点 0,0 旋转 90 度后，left 需移位 100% */
+/* 强制旋转逻辑：原点 0,0 旋转 90 度后，left 需移位 100% *//* 3个条件：屏幕、竖屏、排除PC ，宽度变高度，高度变宽度，left移动到屏幕右边，以左顶点为中心，顺时针旋转90度，强制横屏显示，手机有效*/
 @media screen and (orientation: portrait) and (max-width: 1024px) {
-    #app { 
-        width: 100vh; 
-        height: 100vw; 
-        position: absolute; 
-        top: 0; 
-        left: 100vw; 
-        transform: rotate(90deg); 
-        transform-origin: 0 0;
-    }
+    #app { width: 100vh; height: 100vw; position: absolute; top: 0; left: 100vw; transform: rotate(90deg); transform-origin: 0 0; }
+    #sidebar { width: 100px !important; font-size: 12px; }
 }
-
-/* 3个条件：屏幕、竖屏、排除PC ，宽度变高度，高度变宽度，left移动到屏幕右边，以左顶点为中心，顺时针旋转90度，强制横屏显示，手机有效*/
 /* sidebar 内部子元素 纵向排列 ，右边一条灰色边界线*/
-#sidebar { width: 220px;flex-shrink: 0; display: flex; background: var(--panel); border-right: 1px solid #333; flex-direction: column; }
-@media screen and (orientation: portrait) and (max-width: 1024px) {
-    #sidebar { width: 140px; }
-}
+#sidebar { width: 140px;flex-shrink: 0; display: flex; background: var(--panel); border-right: 1px solid #333; flex-direction: column; }
+
 /*flex: 1--占据父容器中除固定宽度元素外的所有剩余空间，flex-direction: column子元素纵向排列，默认是水平排列*/
 #main { flex: 1; display: flex; flex-direction: column;min-width: 0; }
 /*左一组，右一组，中间留空,左右内边距 15px,内容不贴边*/
+
 #info-bar { height: 50px; background: var(--panel); border-bottom: 2px solid var(--primary); display: flex; align-items: center; justify-content: space-between; padding: 0 15px; flex-shrink: 0;}
 
 /* 核心修复：给容器分配所有剩余空间 */

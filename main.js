@@ -106,7 +106,12 @@ window.logout = () => {
 //全局函数，根据currentMode刷新信息栏和状态栏的显示
 function updateUI() {
     //刷新信息栏模式的显示
-    const modes = { TRAIN: '自由训练模式', DEMO: '教师演示模式', PRACTICE: '演练模式' };
+    // 当前模式按钮高亮 (基于 data-mode)
+    document.querySelectorAll('.m-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.getAttribute('data-mode') === currentMode);
+    });
+    //文字显示当前模式
+    const modes = { TRAIN: '自由训练模式', DEMO: '教师演示模式', PRACTICE: '学生演练模式' };
     document.getElementById('mode-display').innerText = modes[currentMode];
     //底部状态栏显示：演练模式看有没有同学选中，其它显示系统运行正常
     const midStatus = document.getElementById('status-mid');
