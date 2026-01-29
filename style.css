@@ -75,32 +75,32 @@ body {
 /*justify-content: space-between几个组件等距离、留空排列*/
 #status-bar {
     height: 20px;
-    background: (--bg);
-    border-top: 1px solid (--primary);
+    background: var(--bg);
+    border-top: 1px solid var(--primary);
     display: flex;
     align-items: center;
     justify-content: space-between;
     padding: 0 15px;
     font-size: 12px;
-    color: (--text);
+    color: var(--text);
     flex-shrink: 0;
 }
 
 /* 模式切换按钮，水平分布，圆角6px，里面的按钮，无border，无背景色，手型鼠标代表可点击，激活时背景变主色，文字为白色粗体 */
 .mode-switcher {
     display: flex;
-    background: (--bg);
+    background: var(--bg);
     padding: 3px;
     border-radius: 6px;
 }
 
 .m-btn {
     border: none;
-    background: (--bg);
-    color: (--text);
+    background: var(--bg);
+    color: var(--text);
     padding: 5px 12px;
     cursor: pointer;
-    font-size: 12px;
+    font-size: 14px;
 }
 
 .m-btn.active {
@@ -111,7 +111,7 @@ body {
 }
 
 .mode-tag {
-    color: (--hilight);
+    color: var(--primary);
     font-weight: bold;
     font-size: 16px;
 }
@@ -119,13 +119,13 @@ body {
 /* 在线学生列表 */
 .student-item {
     padding: 12px;
-    border-bottom: 1px solid (--bg);
+    border-bottom: 1px solid var(--bg);
     cursor: pointer;
 }
 
 .student-item.active {
     background: (--bg);
-    border-left: 4px solid (--hilight)0f;
+    border-left: 4px solid var(--hilight);
 }
 
 /*inset: 0覆盖整个屏幕，background: rgba(0,0,0,0.9)，半透明几乎不可见，最顶层：普通面板：1～10。浮窗：100。全屏遮罩：1000 起步，登录框永远居中显示*/
@@ -162,7 +162,7 @@ body {
     width: 100%;
     padding: 12px;
     background: var(--primary);
-    color: (--text);
+    color: var(--text);
     border: none;
     border-radius: 6px;
     cursor: pointer;

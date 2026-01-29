@@ -1,18 +1,20 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
+
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>船舶柴油机冷却水仿真系统</title>
+    <meta name="viewport"
+        content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>仿真系统</title>
     <link rel="stylesheet" href="style.css">
     <script src="https://unpkg.com/konva@9/konva.min.js"></script>
 </head>
+
 <body>
-    <div id="app">  <!--这是主界面-->
-        <div id="sidebar" class="hide">  <!--这是侧边栏-->
+    <div id="app"> <!--这是主界面-->
+        <div id="sidebar" class="hide"> <!--这是侧边栏-->
             <div class="sidebar-header"> <!--这是班级标签和班级选择框组合，用两个SPAN使得它们横向排列-->
-                <span><label>班级</label></span>
-                <span><select id="clsSel" onchange="onClassChange(this.value)"></select></span>
+                <select id="clsSel" onchange="onClassChange(this.value)"></select>
             </div>
             <div id="student-list-container"> <!--这是学生在线学生文字和学生列表组合框-->
                 <div class="list-title">在线学生</div>
@@ -20,14 +22,14 @@
             </div>
         </div>
 
-        <div id="main">  <!--这是主显示区-->
-            <div id="info-bar">  <!--这是信息栏-->
-                <div class="info-left">  <!--左侧显示 班级、姓名、在线-->
+        <div id="main"> <!--这是主显示区-->
+            <div id="info-bar"> <!--这是信息栏-->
+                <div class="info-left"> <!--左侧显示 班级、姓名、在线-->
                     <span id="u-class">---</span> | <span id="u-name">---</span>
                     <span class="status-dot">● 在线</span>
                 </div>
                 <div id="mode-display" class="mode-tag">自由训练模式</div>
-                <div id="te-tools" class="mode-switcher hide">  <!--3个按钮控制工作模式-->
+                <div id="te-tools" class="mode-switcher hide"> <!--3个按钮控制工作模式-->
                     <button class="m-btn" data-mode="PRACTICE" onclick="setMode('PRACTICE')">演练</button>
                     <button class="m-btn" data-mode="DEMO" onclick="setMode('DEMO')">演示</button>
                     <button class="m-btn active" data-mode="TRAIN" onclick="setMode('TRAIN')">训练</button>
@@ -35,12 +37,12 @@
                 <button class="btn-logout" onclick="logout()">注销系统</button>
             </div>
 
-            <div id="container"></div>   <!--这是画布，画仿真系统-->
+            <div id="container"></div> <!--这是画布，画仿真系统-->
 
-            <div id="status-bar">    <!--这是底部状态栏-->
+            <div id="status-bar"> <!--这是底部状态栏-->
                 <div id="status-left">系统就绪</div>
                 <div id="status-mid"></div>
-                <div id="status-right">V3.5 Engine</div>
+                <div id="status-right">V0.1 Engine</div>
             </div>
         </div>
     </div>
@@ -63,8 +65,9 @@
             <button class="btn-primary" onclick="doLogin()">进入仿真系统</button>
         </div>
     </div>
-    <script type="module" src="main.js"></script>  <!--这是主程序-->
+    <script type="module" src="main.js"></script> <!--这是主程序-->
 </body>
+
 </html>
 <!--1.登录界面两个函数，角色选择时，切换邀请码输入、班级学号输入，教师不用输入班级-->
 <!--进入仿真系统的函数是doLogin(),没有参数；切换角色的参数是字符串“STUDENT”或者“TEACHER-->

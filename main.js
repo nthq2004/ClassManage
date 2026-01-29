@@ -25,16 +25,19 @@ window.network = new NetworkManager(BASE_URL, (data) => {
         currentMode = data.mode;
         updateUI();
     }
-
+    if (data.type === 'ST_SELECT') {
+    window.selectedSid = (window.selectedSid === data.selid) ? null : data.selid;
+    renderUserList(window.onlineUsers || []);
+    updateUI();
+    }
     // 模式同步逻辑
     if (myRole === 'STUDENT') {
         if (currentMode === 'DEMO') {
             engine.isLocked = true; // 演示模式：学生不可操作，收到教师指令，设置设备状态。
             if (data.type === 'TE_CMD') engine.updateState(data.deviceId, data.action);
         } else if (currentMode === 'PRACTICE') {
-            const isMe = data.to === myInfo.userId;  //这个非常关键，消息是教师选择演练学生是发出的，但消息是广播，所有学生都收到，如果是发个我的，isMe=true, isLocked=false，才可操作。
-            engine.isLocked = !isMe; // 仅选中的学生可操作
-            if (data.type === 'TE_CMD') engine.updateState(data.deviceId, data.action);
+            const isMe = window.selectedSid === myInfo.userId;  //这个非常关键，消息是教师选择的学生是发出的，但消息是广播，所有学生都收到，如果是发个我的，isMe=true, isLocked=false，才可操作。
+            engine.isLocked = !isMe; // 仅选中的学生可操作            
         } else {
             engine.isLocked = false;
         }
@@ -53,7 +56,7 @@ window.network = new NetworkManager(BASE_URL, (data) => {
     }
 });
 
-// UI 操作函数，注册界面，根据角色切换显示，window.toggleFields(role)方法
+// UI 操作函数，注册界面，根据角色切换显示，window.toggleFields(role)方法。。。。。。。。。。。。
 // --- 登录逻辑修复 ---
 window.toggleFields = (role) => {
     const stFields = document.getElementById('st-fields');
@@ -67,7 +70,7 @@ window.toggleFields = (role) => {
     }
 };
 
-//window.dologin()方法。在登录界面上调用，存储role和info到本地，重新加载。
+//window.dologin()方法。在登录界面上调用，存储role和info到本地，重新加载。。。。。。。。。。。。。。
 window.doLogin = () => {
     const role = document.getElementById('roleSel').value;
     const name = document.getElementById('loginName').value;
@@ -81,18 +84,17 @@ window.doLogin = () => {
         className: role === 'STUDENT' ? document.getElementById('loginClass').value : "默认班级"
     };
     localStorage.setItem('marine_sim_v3', JSON.stringify({ role, info }));
-    handleRotation();
     location.reload();
 };
 
-//教师切换班级时调用，存储本次进入的班级，下次默认进入，在新机器上登录时，教师进入默认班级。调用https://api.wangaijun.clikc/?role=""?info="",教师进入新班级的房间会话。系统广播该房间的用户列表信息，教师重新显示新进入班级的在线用户列表。
+//教师切换班级时调用，存储本次进入的班级，下次默认进入，在新机器上登录时，教师进入默认班级。调用https://api.wangaijun.clikc/?role=""?info="",教师进入新班级的房间会话。系统广播该房间的用户列表信息，教师重新显示新进入班级的在线用户列表。。。。。。。。。。。。。。。。。。。。。
 window.onClassChange = (cls) => {
     myInfo.className = cls;
     localStorage.setItem('marine_sim_v3', JSON.stringify({ role: myRole, info: myInfo }));
     window.network.connect(myRole, myInfo);
 };
 
-//教师端在操作模式切换时调用。设置变量、发送模式改变消息（发到WebSocket的另外一端Server端，它应该帮我转发到班级里所有在线的用户、更新信息栏和状态栏的显示
+//教师端在操作模式切换时调用。设置变量、发送模式改变消息（发到WebSocket的另外一端Server端，它应该帮我转发到班级里所有在线的用户、更新信息栏和状态栏的显示。。。。。。。。。。。。。。。。。。。。。。。。。。
 window.setMode = (m) => {
     //currentMode = m;
     window.network.send({ type: 'MODE_SYNC', mode: m });
@@ -101,24 +103,24 @@ window.setMode = (m) => {
 
 //在监控模式下，教师选择被监控学生时调用，重新刷新用户列表的状态，更新信息栏和状态栏的线上。可取消监控（原来就是被监控，又被点中）、切换监控（selectedSid被切换）、这里应该有消息发出。
 window.selectStudent = (sid, name) => {
-    window.selectedSid = (window.selectedSid === sid) ? null : sid;
-    window.network.send({ type: 'ST_SELECT', selid: window.selectedSid });
-    renderUserList(window.onlineUsers || []);
-    updateUI();
+    //window.selectedSid = (window.selectedSid === sid) ? null : sid;只发消息，在消息处理函数中跟新当前选择的用户
+    window.network.send({ type: 'ST_SELECT', selid: sid });
+    //renderUserList(window.onlineUsers || []);
+    //updateUI();
 };
 
-//点击注销时调用
+//点击注销时调用。。。。。。。。。。。。。。。。。。。。。。。
 window.logout = () => {
     localStorage.removeItem('marine_sim_v3');
     location.reload();
 };
 
-//全局函数，根据currentMode刷新信息栏和状态栏的显示
+//全局函数，根据currentMode刷新信息栏和状态栏的显示。。。。。。。。。。。。
 function updateUI() {
-    //刷新信息栏模式的显示
-    //文字显示当前模式
+    //刷新信息栏模式的显示，文字显示当前模式
     const modes = { TRAIN: '自由训练模式', DEMO: '教师演示模式', PRACTICE: '学生演练模式' };
     document.getElementById('mode-display').innerText = modes[currentMode];
+    
     //底部状态栏显示：演练模式看有没有同学选中，其它显示系统运行正常
     const midStatus = document.getElementById('status-mid');
     if (currentMode === 'PRACTICE') {
@@ -135,22 +137,21 @@ function updateUI() {
     }
 }
 
-//全局函数，主要是教师端，刷新在线用户列表；
+//全局函数，主要是教师端，刷新在线用户列表；学生端直接返回。。。。。。。。。。。。
 function renderUserList(users) {
     window.onlineUsers = users;
     const list = document.getElementById('student-list');
-    if (!list) return;
+    if (!list) return;   //学生端，没有这个
     list.innerHTML = users.filter(u => u.role === 'STUDENT').map(u => `
         <div class="student-item ${window.selectedSid === u.userId ? 'active' : ''}" 
-             style="padding: 15px 10px;"
+             style="padding: 10px 5px;color: #3498db"
              onclick="selectStudent('${u.userId}', '${u.userName}')">
-            <div style="font-weight:bold">${u.userName}</div>
-            <div style="font-size:10px; opacity:0.6">${u.userId}</div>
+            <div style="font-weight:bold">${u.userName} ${u.userId}</div>
         </div>
     `).join('');
 }
 
-// --- 初始化与入口 ---
+// --- 初始化与入口 ---。。。。。。。。。。。。。。。。。。。。。。。
 document.addEventListener('DOMContentLoaded', () => {
     const saved = localStorage.getItem('marine_sim_v3');
 
@@ -159,25 +160,25 @@ document.addEventListener('DOMContentLoaded', () => {
         myRole = session.role;
         myInfo = session.info;
 
-        // 渲染基础信息
+        // 渲染基础信息，信息栏的用户名和班级
         document.getElementById('u-name').innerText = myInfo.userName;
         document.getElementById('u-class').innerText = myInfo.className;
 
         if (myRole === 'TEACHER') {
             const sidebar = document.getElementById('sidebar');
             const teTools = document.getElementById('te-tools');
-            sidebar.classList.remove('hide');
+            sidebar.classList.remove('hide'); //侧边栏显示
             sidebar.style.display = 'flex'; // 强制显示
-            teTools.classList.remove('hide');
+            teTools.classList.remove('hide'); //信息栏的3个模式按钮
 
-            // 加载班级列表
+            // 加载班级列表,教师端多的东西：侧边栏（班级选择、学生列表）、信息栏（3个模式按钮）
             window.network.fetchClasses().then(list => {
                 const sel = document.getElementById('clsSel');
-                sel.innerHTML = list.map(c => `<option value="${c}" ${c === myInfo.className ? 'selected' : ''}>${c}</option>`).join('');
+                sel.innerHTML = list.map(c => `<option value="${c}" ${c === myInfo.className ? 'selected' : ''} style="fontsize:14px;background:var(--primary)">${c}</option>`).join('');
             });
         }
 
-        // 启动连接
+        // 启动连接，开启wss连接，传递角色、班级、姓名、学号，根据班级获得房间实例，每个班级一个实例。教师登陆，如果没有本地存储，则进入默认班级。连接后，升级为Websocket，可以通过TCP连接发送消息。
         window.network.connect(myRole, myInfo);
     } else {
         document.getElementById('login-overlay').style.display = 'flex';
