@@ -1,14 +1,31 @@
 :root { --primary: #3498db; --bg: #727885; --panel: #a6c1a1; --text: #f6f8f9; } 
 /*:root { --xxx }= 整个网页的“设计参数表 / 主题配置中心”*/
-body { margin: 0; padding: 0; background:var(--bg); color: var(--text); font-family: system-ui; overflow: hidden; }
+body { margin: 0; padding: env(safe-area-inset-top) env(safe-area-inset-right) 
+             env(safe-area-inset-bottom) env(safe-area-inset-left); background:var(--bg); color: var(--text); font-family: system-ui; overflow: hidden; }
 
-/* 全屏引导层样式 */
 #fullscreen-overlay {
-    position: fixed; inset: 0; background: var(--bg);
-    display: flex; align-items: center; justify-content: center; z-index: 9999;
+    position: fixed;
+    top: 0; left: 0;
+    width: 100vw; height: 100vh;
+    background: #0b0e14;
+    z-index: 9999;
+    display: flex;
+    justify-content: center;
+    align-items: center;
 }
-.prompt-box { background: var(--panel); padding: 40px; border-radius: 15px; text-align: center; border: 1px solid var(--primary); }
-.prompt-box button { background: var(--primary); color: white; border: none; padding: 15px 30px; font-size: 18px; border-radius: 8px; cursor: pointer; }
+
+/* 保证长文字或代码类元素在小屏自动换行 */
+.prompt-box {
+    word-break: break-word;
+    overflow-wrap: break-word;
+    max-width: 80%;
+    text-align: center;
+}
+
+/* 隐藏滚动条但保留滚动功能 */
+#container::-webkit-scrollbar {
+    display: none;
+}
 
 /* 1. 基础布局：始终填满当前视口 */
 #app {
