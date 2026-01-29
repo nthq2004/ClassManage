@@ -4,7 +4,15 @@ import { SimulationEngine } from './simulation.js';
 const BASE_URL = "api.wangaijun.click"; // 请替换为您的 Worker 域名
 let myInfo, myRole, currentMode = 'TRAIN'; //这是全局变量，还有window.的变量，从属于本窗口。engine是全局
 window.selectedSid = null; // 当前选中的演练学生，window.onlineusers也是window.变量
-
+// 在 main.js 的顶部或初始化部分加入
+function handleRotation() {
+    // 尝试锁定屏幕方向 (仅支持部分安卓浏览器)
+    if (screen.orientation && screen.orientation.lock) {
+        screen.orientation.lock('landscape').catch(() => {
+            console.log("浏览器限制：无法自动锁定横屏，请手动旋转");
+        });
+    }
+}
 // (id, state) =>，箭头函数，是仿真对象的onAction函数，带两个参数，实际是调用网络的发送函数，在WebSocket上面发送格式化数据，DO收到的是JSON数据。JSON字符串包括6个参数，type(教师指令、还是学生指令)、操纵模式、设备ID、动作、发送者、接受者。
 //全局engine对象.onAction(id,state)方法
 const engine = new SimulationEngine('container', (id, state) => {
@@ -73,6 +81,7 @@ window.doLogin = () => {
         className: role === 'STUDENT' ? document.getElementById('loginClass').value : "默认班级"
     };
     localStorage.setItem('marine_sim_v3', JSON.stringify({ role, info }));
+    handleRotation();
     location.reload();
 };
 
@@ -179,3 +188,10 @@ document.addEventListener('DOMContentLoaded', () => {
 document.addEventListener('touchstart', function(e) {
     if(e.touches.length > 1) e.preventDefault(); // 禁止多指缩放干扰坐标
 }, {passive: false});
+
+// 监听窗口尺寸变化，当用户旋转手机时，强制画布重新适配
+window.addEventListener('resize', () => {
+    if (window.engine) {
+        window.engine.fit();
+    }
+});

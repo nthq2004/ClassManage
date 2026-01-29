@@ -5,8 +5,8 @@ export class SimulationEngine {
         /* 仿真对象都在画布上，根据这个画布创建舞台，添加图层，设备都在图层上， */
         this.stage = new Konva.Stage({
             container: containerId,
-            width: this.container.offsetWidth || 800,
-            height: this.container.offsetHeight || 600
+            width: this.container.offsetWidth,
+            height: this.container.offsetHeight
         });
         this.layer = new Konva.Layer();
         this.stage.add(this.layer);
@@ -18,24 +18,22 @@ export class SimulationEngine {
         /*构造函数里面，一般会调用初始化函数 */
         this.init();
     }
-    // 关键修复：重写 Konva 的内容坐标获取方式
+// 关键：现在的坐标获取变得极其简单，100% 准确
     getRelativePointerPosition() {
-        const pos = this.stage.getPointerPosition();
-        if (!pos) return null;
-
-        // 检测是否处于手机竖屏触发了 CSS 旋转
-        const isPortrait = window.innerHeight > window.innerWidth && window.innerWidth < 1024;
-        
-        if (isPortrait) {
-            // 这里的逻辑需要匹配你 CSS 旋转的中心点
-            // 如果 CSS 旋转了 90 度，坐标需要手动映射
-            return {
-                x: pos.y, 
-                y: this.stage.width() - pos.x
-            };
-        }
-        return pos;
+        return this.stage.getPointerPosition();
     }
+
+    fit() {
+        // 当手机旋转，容器宽高改变时，Konva 自动跟随
+        const w = this.container.offsetWidth;
+        const h = this.container.offsetHeight;
+        if (w > 0 && h > 0) {
+            this.stage.width(w);
+            this.stage.height(h);
+            this.layer.batchDraw();
+        }
+    }
+
     init() {
         // 创建背景层拦截点击，测试坐标
         const bg = new Konva.Rect({

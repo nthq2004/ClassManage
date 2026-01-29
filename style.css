@@ -2,16 +2,53 @@
 /*:root { --xxx }= 整个网页的“设计参数表 / 主题配置中心”*/
 body { margin: 0; padding: 0; background:var(--bg); color: var(--text); font-family: system-ui; overflow: hidden; }
 /*禁止滚动条*/
-/* 手机竖屏自动转横屏逻辑，弹性布局 */
-#app { display: flex; width: 100vw; height: 100vh; }
+/* 1. 基础布局：始终填满当前视口 */
+#app {
+    display: flex;
+    width: 100vw;
+    height: 100vh;
+    overflow: hidden;
+    background: #000;
+}
 /* 确保 hide 类能彻底隐藏元素 */
 .hide { display: none !important; }
 
 /* 强制旋转逻辑：原点 0,0 旋转 90 度后，left 需移位 100% *//* 3个条件：屏幕、竖屏、排除PC ，宽度变高度，高度变宽度，left移动到屏幕右边，以左顶点为中心，顺时针旋转90度，强制横屏显示，手机有效*/
-@media screen and (orientation: portrait) and (max-width: 1024px) {
-    #app { width: 100vh; height: 100vw; position: absolute; top: 0; left: 100vw; transform: rotate(90deg); transform-origin: 0 0; }
-    #sidebar { width: 100px !important; font-size: 12px; }
+/* 2. 核心：处理竖屏状态 */
+@media screen and (orientation: portrait) {
+    /* 在竖屏时隐藏主界面 */
+    #app { display: none !important; }
+
+    /* 显示全屏旋转提示 */
+    body::after {
+        content: "🔄 请旋转手机至横屏状态以进入系统";
+        position: fixed;
+        inset: 0;
+        background: #0b0e14;
+        color: #3498db;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        z-index: 9999;
+        font-size: 1.2rem;
+        padding: 20px;
+        text-align: center;
+    }
 }
+/* 3. 横屏下的响应式布局 */
+@media screen and (orientation: landscape) {
+    #sidebar {
+        width: 100px; /* 物理横屏下，侧边栏可以稍微宽一点 */
+        flex-shrink: 0;
+    }
+    
+    #main {
+        flex: 1;
+        min-width: 0;
+    }
+}
+
 /* sidebar 内部子元素 纵向排列 ，右边一条灰色边界线*/
 #sidebar { width: 140px;flex-shrink: 0; display: flex; background: var(--panel); border-right: 1px solid #333; flex-direction: column; }
 
