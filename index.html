@@ -8,6 +8,13 @@
     <script src="https://unpkg.com/konva@9/konva.min.js"></script>
 </head>
 <body>
+    <div id="fullscreen-overlay" class="hide">
+        <div class="prompt-box">
+            <h2>🖥️ 仿真系统就绪</h2>
+            <p>点击下方按钮进入全屏横屏模式</p>
+            <button onclick="startSimulation()">开启仿真</button>
+        </div>
+    </div>
     <div id="app">  <!--这是主界面-->
         <div id="sidebar" class="hide">  <!---->这是侧边栏
             <div class="sidebar-header">

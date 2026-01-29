@@ -13,6 +13,28 @@ function handleRotation() {
         });
     }
 }
+
+// 初始化
+window.startSimulation = async () => {
+    const doc = document.documentElement;
+    try {
+        // 1. 进入全屏
+        if (doc.requestFullscreen) await doc.requestFullscreen();
+        else if (doc.webkitRequestFullscreen) await doc.webkitRequestFullscreen();
+        
+        // 2. 锁定横屏
+        if (screen.orientation && screen.orientation.lock) {
+            await screen.orientation.lock('landscape');
+        }
+    } catch (e) {
+        console.warn("全屏/旋转受限", e);
+    }
+    
+    document.getElementById('fullscreen-overlay').classList.add('hide');
+    // 强制画布重绘
+    setTimeout(() => window.engine?.fit(), 300);
+};
+
 // (id, state) =>，箭头函数，是仿真对象的onAction函数，带两个参数，实际是调用网络的发送函数，在WebSocket上面发送格式化数据，DO收到的是JSON数据。JSON字符串包括6个参数，type(教师指令、还是学生指令)、操纵模式、设备ID、动作、发送者、接受者。
 //全局engine对象.onAction(id,state)方法
 const engine = new SimulationEngine('container', (id, state) => {
