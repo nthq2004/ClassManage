@@ -62,9 +62,14 @@ var SimSessionV2 = class {
       // 广播逻辑，模式同步信息广播
       if (data.type === "MODE_SYNC") {
         this.broadcast(data);
-      } else if (data.type === "TE_CMD" && data.mode === "DEMO") {
+      } 
+      else if (data.type === "ST_SELECT" ) {
+        this.broadcast(data);
+         } 
+      else if (data.type === "TE_CMD" && data.mode === "DEMO") {
         this.broadcastToStudents(data);
-         } else if (data.type === "ST_CMD" && data.mode === "PRACTICE") {
+         } 
+      else if (data.type === "ST_CMD" && data.mode === "PRACTICE") {
         this.broadcastToTeachers(data);
       }
     });
