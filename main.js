@@ -48,9 +48,8 @@ window.network = new NetworkManager(BASE_URL, (data) => {
             if (data.from === window.selectedSid) {
                 engine.updateState(data.deviceId, data.action);
             }
-            else {
-                engine.isLocked = false; //
-            }
+        } else {
+            engine.isLocked = false; //
         }
 
     }
@@ -98,7 +97,7 @@ window.onClassChange = (cls) => {
 window.setMode = (m) => {
     //currentMode = m;
     window.network.send({ type: 'MODE_SYNC', mode: m });
-    updateUI();
+    //updateUI();
 };
 
 //在监控模式下，教师选择被监控学生时调用，重新刷新用户列表的状态，更新信息栏和状态栏的线上。可取消监控（原来就是被监控，又被点中）、切换监控（selectedSid被切换）、这里应该有消息发出。
