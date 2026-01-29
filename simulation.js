@@ -18,28 +18,8 @@ export class SimulationEngine {
         /*构造函数里面，一般会调用初始化函数 */
         this.init();
     }
-// 关键：现在的坐标获取变得极其简单，100% 准确
-    getRelativePointerPosition() {
-        return this.stage.getPointerPosition();
-    }
-
-    fit() {
-        // 当手机旋转，容器宽高改变时，Konva 自动跟随
-        const w = this.container.offsetWidth;
-        const h = this.container.offsetHeight;
-        if (w > 0 && h > 0) {
-            this.stage.width(w);
-            this.stage.height(h);
-            this.layer.batchDraw();
-        }
-    }
 
     init() {
-        // 创建背景层拦截点击，测试坐标
-        const bg = new Konva.Rect({
-            width: 2000, height: 2000, fill: '#000'
-        });
-        this.layer.add(bg);
         // 创建船舶柴油机冷却水系统组件
         this.createComp('Diesel', 50, 80, '#e67e22', '柴油机');
         this.createComp('Pump', 50, 250, '#3498db', '主淡水泵');
@@ -55,22 +35,7 @@ export class SimulationEngine {
         this.createActionBtn('Fault', 460, 500, '#e74c3c', '故障设置');
         
         this.layer.draw();
-        // 关键修复：延迟 100ms 强制二次适配，确保布局已生效
-        setTimeout(() => this.fit(), 100);
         window.addEventListener('resize', () => this.fit());
-    }
-
-    fit() {
-        if (!this.container) return;
-        const w = this.container.offsetWidth;
-        const h = this.container.offsetHeight;
-        
-        // 如果高度仍为 0，说明 CSS 布局有问题
-        if (h === 0) console.warn("Canvas container height is 0. Check CSS Flexbox.");
-        
-        this.stage.width(w);
-        this.stage.height(h);
-        this.layer.batchDraw();
     }
 
     /*每一个功能设备都是一个group，典型包括外壳、小组件、文字等，name属性用.查找，代表一类设备或一类属性，id属性用#查找，代表独一无二节点 */
