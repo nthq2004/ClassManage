@@ -8,21 +8,14 @@
     <script src="https://unpkg.com/konva@9/konva.min.js"></script>
 </head>
 <body>
-    <div id="fullscreen-overlay" class="hide">
-        <div class="prompt-box">
-            <h2>🖥️ 仿真系统就绪</h2>
-            <p>点击下方按钮进入全屏横屏模式</p>
-            <button onclick="startSimulation()">开启仿真</button>
-        </div>
-    </div>
     <div id="app">  <!--这是主界面-->
-        <div id="sidebar" class="hide">  <!---->这是侧边栏
-            <div class="sidebar-header">
-                <label>班级选择</label>
-                <select id="clsSel" onchange="onClassChange(this.value)"></select>
+        <div id="sidebar" class="hide">  <!--这是侧边栏-->
+            <div class="sidebar-header"> <!--这是班级标签和班级选择框组合，用两个SPAN使得它们横向排列-->
+                <span><label>班级</label></span>
+                <span><select id="clsSel" onchange="onClassChange(this.value)"></select></span>
             </div>
-            <div id="student-list-container">
-                <div class="list-title">在线学生列表</div>
+            <div id="student-list-container"> <!--这是学生在线学生文字和学生列表组合框-->
+                <div class="list-title">在线学生</div>
                 <div id="student-list"></div>
             </div>
         </div>
@@ -35,9 +28,9 @@
                 </div>
                 <div id="mode-display" class="mode-tag">自由训练模式</div>
                 <div id="te-tools" class="mode-switcher hide">  <!--3个按钮控制工作模式-->
-                    <button class="m-btn" onclick="setMode('PRACTICE')">演练</button>
-                    <button class="m-btn" onclick="setMode('DEMO')">演示</button>
-                    <button class="m-btn active" onclick="setMode('TRAIN')">训练</button>
+                    <button class="m-btn" data-mode="PRACTICE" onclick="setMode('PRACTICE')">演练</button>
+                    <button class="m-btn" data-mode="DEMO" onclick="setMode('DEMO')">演示</button>
+                    <button class="m-btn active" data-mode="TRAIN" onclick="setMode('TRAIN')">训练</button>
                 </div>
                 <button class="btn-logout" onclick="logout()">注销系统</button>
             </div>
@@ -46,14 +39,14 @@
 
             <div id="status-bar">    <!--这是底部状态栏-->
                 <div id="status-left">系统就绪</div>
-                <div id="status-mid">准备中...</div>
+                <div id="status-mid"></div>
                 <div id="status-right">V3.5 Engine</div>
             </div>
         </div>
     </div>
 
-    <div id="login-overlay" style="display:none"><!--这是注册界面-->
-        <div class="login-box">
+    <div id="login-overlay" style="display:none"><!--这是注册界面,外面的遮盖层-->
+        <div class="login-box"> <!--这是真正的登录框，从上往下依次是标题框、选择框、姓名输入框、班级学号组合输入、邀请码组合输入、登录按钮-->
             <h2>仿真系统登录</h2>
             <select id="roleSel" onchange="toggleFields(this.value)"> <!--这是角色选择-->
                 <option value="STUDENT">我是学生</option>
@@ -61,7 +54,7 @@
             </select>
             <input type="text" id="loginName" placeholder="输入姓名">
             <div id="st-fields">
-                <input type="text" id="loginClass" placeholder="输入班级 (新班级将自动注册)">
+                <input type="text" id="loginClass" placeholder="输入班级 (新班级自动注册)">
                 <input type="text" id="loginSid" placeholder="输入学号">
             </div>
             <div id="te-fields" class="hide">
@@ -73,3 +66,7 @@
     <script type="module" src="main.js"></script>  <!--这是主程序-->
 </body>
 </html>
+<!--1.登录界面两个函数，角色选择时，切换邀请码输入、班级学号输入，教师不用输入班级-->
+<!--进入仿真系统的函数是doLogin(),没有参数；切换角色的参数是字符串“STUDENT”或者“TEACHER-->
+<!---->
+<!---->

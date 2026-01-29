@@ -4,36 +4,7 @@ import { SimulationEngine } from './simulation.js';
 const BASE_URL = "api.wangaijun.click"; // 请替换为您的 Worker 域名
 let myInfo, myRole, currentMode = 'TRAIN'; //这是全局变量，还有window.的变量，从属于本窗口。engine是全局
 window.selectedSid = null; // 当前选中的演练学生，window.onlineusers也是window.变量
-// 在 main.js 的顶部或初始化部分加入
-function handleRotation() {
-    // 尝试锁定屏幕方向 (仅支持部分安卓浏览器)
-    if (screen.orientation && screen.orientation.lock) {
-        screen.orientation.lock('landscape').catch(() => {
-            console.log("浏览器限制：无法自动锁定横屏，请手动旋转");
-        });
-    }
-}
 
-// 初始化
-window.startSimulation = async () => {
-    const doc = document.documentElement;
-    try {
-        // 1. 进入全屏
-        if (doc.requestFullscreen) await doc.requestFullscreen();
-        else if (doc.webkitRequestFullscreen) await doc.webkitRequestFullscreen();
-        
-        // 2. 锁定横屏
-        if (screen.orientation && screen.orientation.lock) {
-            await screen.orientation.lock('landscape');
-        }
-    } catch (e) {
-        console.warn("全屏/旋转受限", e);
-    }
-    
-    document.getElementById('fullscreen-overlay').classList.add('hide');
-    // 强制画布重绘
-    setTimeout(() => window.engine?.fit(), 300);
-};
 
 // (id, state) =>，箭头函数，是仿真对象的onAction函数，带两个参数，实际是调用网络的发送函数，在WebSocket上面发送格式化数据，DO收到的是JSON数据。JSON字符串包括6个参数，type(教师指令、还是学生指令)、操纵模式、设备ID、动作、发送者、接受者。
 //全局engine对象.onAction(id,state)方法
@@ -67,11 +38,18 @@ window.network = new NetworkManager(BASE_URL, (data) => {
         } else {
             engine.isLocked = false;
         }
-    } else { 
+    } else {
         // 教师端逻辑，在演练模式下，收到的信息从选中学生来，刷新自己的仿真设备状态
-        if (currentMode === 'PRACTICE' && data.from === window.selectedSid) {
-            engine.updateState(data.deviceId, data.action);
+        if (currentMode === 'PRACTICE') {
+            engine.isLocked = true; //教师在演练模式下，锁定不能操作模型
+            if (data.from === window.selectedSid) {
+                engine.updateState(data.deviceId, data.action);
+            }
+            else {
+                engine.isLocked = false; //
+            }
         }
+
     }
 });
 
@@ -107,7 +85,7 @@ window.doLogin = () => {
     location.reload();
 };
 
-//教师切换班级时调用，存储本次进入的班级，下次默认进入，在新机器上登录时，教师进入默认班级。
+//教师切换班级时调用，存储本次进入的班级，下次默认进入，在新机器上登录时，教师进入默认班级。调用https://api.wangaijun.clikc/?role=""?info="",教师进入新班级的房间会话。系统广播该房间的用户列表信息，教师重新显示新进入班级的在线用户列表。
 window.onClassChange = (cls) => {
     myInfo.className = cls;
     localStorage.setItem('marine_sim_v3', JSON.stringify({ role: myRole, info: myInfo }));
@@ -116,7 +94,7 @@ window.onClassChange = (cls) => {
 
 //教师端在操作模式切换时调用。设置变量、发送模式改变消息（发到WebSocket的另外一端Server端，它应该帮我转发到班级里所有在线的用户、更新信息栏和状态栏的显示
 window.setMode = (m) => {
-    currentMode = m;
+    //currentMode = m;
     window.network.send({ type: 'MODE_SYNC', mode: m });
     updateUI();
 };
@@ -124,6 +102,7 @@ window.setMode = (m) => {
 //在监控模式下，教师选择被监控学生时调用，重新刷新用户列表的状态，更新信息栏和状态栏的线上。可取消监控（原来就是被监控，又被点中）、切换监控（selectedSid被切换）、这里应该有消息发出。
 window.selectStudent = (sid, name) => {
     window.selectedSid = (window.selectedSid === sid) ? null : sid;
+    window.network.send({ type: 'ST_SELECT', selid: window.selectedSid });
     renderUserList(window.onlineUsers || []);
     updateUI();
 };
@@ -137,10 +116,6 @@ window.logout = () => {
 //全局函数，根据currentMode刷新信息栏和状态栏的显示
 function updateUI() {
     //刷新信息栏模式的显示
-    // 当前模式按钮高亮 (基于 data-mode)
-    document.querySelectorAll('.m-btn').forEach(btn => {
-        btn.classList.toggle('active', btn.getAttribute('data-mode') === currentMode);
-    });
     //文字显示当前模式
     const modes = { TRAIN: '自由训练模式', DEMO: '教师演示模式', PRACTICE: '学生演练模式' };
     document.getElementById('mode-display').innerText = modes[currentMode];
@@ -154,7 +129,9 @@ function updateUI() {
     }
     //教师收到该消息，同步主讲教师的模式操纵状态
     if (myRole === 'TEACHER') {
-        document.querySelectorAll('.m-btn').forEach(b => b.classList.toggle('active', b.innerText.includes(modes[currentMode].substring(0,2))));
+        document.querySelectorAll('.m-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.getAttribute('data-mode') === currentMode);
+        });
     }
 }
 
@@ -176,12 +153,12 @@ function renderUserList(users) {
 // --- 初始化与入口 ---
 document.addEventListener('DOMContentLoaded', () => {
     const saved = localStorage.getItem('marine_sim_v3');
-    
+
     if (saved) {
         const session = JSON.parse(saved);
-        myRole = session.role; 
+        myRole = session.role;
         myInfo = session.info;
-        
+
         // 渲染基础信息
         document.getElementById('u-name').innerText = myInfo.userName;
         document.getElementById('u-class').innerText = myInfo.className;
@@ -192,14 +169,14 @@ document.addEventListener('DOMContentLoaded', () => {
             sidebar.classList.remove('hide');
             sidebar.style.display = 'flex'; // 强制显示
             teTools.classList.remove('hide');
-            
+
             // 加载班级列表
             window.network.fetchClasses().then(list => {
                 const sel = document.getElementById('clsSel');
                 sel.innerHTML = list.map(c => `<option value="${c}" ${c === myInfo.className ? 'selected' : ''}>${c}</option>`).join('');
             });
         }
-        
+
         // 启动连接
         window.network.connect(myRole, myInfo);
     } else {
@@ -207,9 +184,9 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 });
 // 在 main.js 中，确保针对 Touch 事件做了优化
-document.addEventListener('touchstart', function(e) {
-    if(e.touches.length > 1) e.preventDefault(); // 禁止多指缩放干扰坐标
-}, {passive: false});
+/*document.addEventListener('touchstart', function (e) {
+    if (e.touches.length > 1) e.preventDefault(); // 禁止多指缩放干扰坐标
+}, { passive: false });*/
 
 // 监听窗口尺寸变化，当用户旋转手机时，强制画布重新适配
 window.addEventListener('resize', () => {

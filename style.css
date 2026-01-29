@@ -1,30 +1,25 @@
-:root { --primary: #3498db; --bg: #727885; --panel: #a6c1a1; --text: #f6f8f9; } 
 /*:root { --xxx }= 整个网页的“设计参数表 / 主题配置中心”*/
-body { margin: 0; padding: env(safe-area-inset-top) env(safe-area-inset-right) 
-             env(safe-area-inset-bottom) env(safe-area-inset-left); background:var(--bg); color: var(--text); font-family: system-ui; overflow: hidden; }
-
-#fullscreen-overlay {
-    position: fixed;
-    top: 0; left: 0;
-    width: 100vw; height: 100vh;
-    background: #0b0e14;
-    z-index: 9999;
-    display: flex;
-    justify-content: center;
-    align-items: center;
+:root {
+    --primary: #3498db;
+    --bg: #727885;
+    --panel: #a6c1a1;
+    --text: #f6f8f9;
+    --hilight: #f0e69b;
 }
 
-/* 保证长文字或代码类元素在小屏自动换行 */
-.prompt-box {
-    word-break: break-word;
-    overflow-wrap: break-word;
-    max-width: 80%;
-    text-align: center;
+
+body {
+    margin: 0;
+    padding: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: system-ui;
+    overflow: hidden;
 }
 
-/* 隐藏滚动条但保留滚动功能 */
-#container::-webkit-scrollbar {
-    display: none;
+/* 确保 hide 类能彻底隐藏元素 */
+.hide {
+    display: none !important;
 }
 
 /* 1. 基础布局：始终填满当前视口 */
@@ -33,87 +28,144 @@ body { margin: 0; padding: env(safe-area-inset-top) env(safe-area-inset-right)
     width: 100vw;
     height: 100vh;
     overflow: hidden;
-    background: #000;
-}
-/* 竖屏时强制隐藏并提示（针对未全屏或未旋转情况） */
-@media screen and (orientation: portrait) {
-    #app { display: none; }
-    #fullscreen-overlay { display: flex !important; }
-}
-/* 确保 hide 类能彻底隐藏元素 */
-.hide { display: none !important; }
-
-/* 强制旋转逻辑：原点 0,0 旋转 90 度后，left 需移位 100% *//* 3个条件：屏幕、竖屏、排除PC ，宽度变高度，高度变宽度，left移动到屏幕右边，以左顶点为中心，顺时针旋转90度，强制横屏显示，手机有效*/
-/* 2. 核心：处理竖屏状态 */
-@media screen and (orientation: portrait) {
-    /* 在竖屏时隐藏主界面 */
-    #app { display: none !important; }
-
-    /* 显示全屏旋转提示 */
-    body::after {
-        content: "🔄 请旋转手机至横屏状态以进入系统";
-        position: fixed;
-        inset: 0;
-        background: #0b0e14;
-        color: #3498db;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        z-index: 9999;
-        font-size: 1.2rem;
-        padding: 20px;
-        text-align: center;
-    }
-}
-/* 3. 横屏下的响应式布局 */
-@media screen and (orientation: landscape) {
-    #sidebar {
-        width: 100px; /* 物理横屏下，侧边栏可以稍微宽一点 */
-        flex-shrink: 0;
-    }
-    
-    #main {
-        flex: 1;
-        min-width: 0;
-    }
+    background: var(--bg);
 }
 
 /* sidebar 内部子元素 纵向排列 ，右边一条灰色边界线*/
-#sidebar { width: 140px;flex-shrink: 0; display: flex; background: var(--panel); border-right: 1px solid #333; flex-direction: column; }
+#sidebar {
+    width: 100px;
+    flex-shrink: 0;
+    display: flex;
+    background: var(--panel);
+    border-right: 1px solid (--primary);
+    flex-direction: column;
+}
 
 /*flex: 1--占据父容器中除固定宽度元素外的所有剩余空间，flex-direction: column子元素纵向排列，默认是水平排列*/
-#main { flex: 1; display: flex; flex-direction: column;min-width: 0; }
+#main {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+}
+
 /*左一组，右一组，中间留空,左右内边距 15px,内容不贴边*/
 
-#info-bar { height: 50px; background: var(--panel); border-bottom: 2px solid var(--primary); display: flex; align-items: center; justify-content: space-between; padding: 0 15px; flex-shrink: 0;}
+#info-bar {
+    height: 40px;
+    background: var(--panel);
+    border-bottom: 2px solid var(--primary);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 15px;
+    flex-shrink: 0;
+}
 
 /* 核心修复：给容器分配所有剩余空间 */
-#container { 
-    flex: 1; 
+#container {
+    flex: 1;
     width: 100%;
-    min-height: 0; /* 极其重要：防止 flex 容器高度塌陷 */
-    background:var(--bg);
+    min-height: 0;
+    /* 极其重要：防止 flex 容器高度塌陷 */
+    background: var(--bg);
     position: relative;
 }
 
 /*justify-content: space-between几个组件等距离、留空排列*/
-#status-bar { height: 30px; background: #10141b; border-top: 1px solid #333; display: flex; align-items: center; justify-content: space-between; padding: 0 15px; font-size: 12px; color: #888; flex-shrink: 0;}
+#status-bar {
+    height: 20px;
+    background: (--bg);
+    border-top: 1px solid (--primary);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 15px;
+    font-size: 12px;
+    color: (--text);
+    flex-shrink: 0;
+}
 
 /* 模式切换按钮，水平分布，圆角6px，里面的按钮，无border，无背景色，手型鼠标代表可点击，激活时背景变主色，文字为白色粗体 */
-.mode-switcher { display: flex; background: #000; padding: 3px; border-radius: 6px; }
-.m-btn { border: none; background: none; color: #666; padding: 5px 12px; cursor: pointer; font-size: 12px; }
-.m-btn.active { background: var(--primary); color: #fff; border-radius: 4px; font-weight: bold; }
-.mode-tag { color: #f1c40f; font-weight: bold; font-size: 13px; }
+.mode-switcher {
+    display: flex;
+    background: (--bg);
+    padding: 3px;
+    border-radius: 6px;
+}
+
+.m-btn {
+    border: none;
+    background: (--bg);
+    color: (--text);
+    padding: 5px 12px;
+    cursor: pointer;
+    font-size: 12px;
+}
+
+.m-btn.active {
+    background: var(--primary);
+    color: (--hilight);
+    border-radius: 4px;
+    font-weight: bold;
+}
+
+.mode-tag {
+    color: (--hilight);
+    font-weight: bold;
+    font-size: 16px;
+}
 
 /* 在线学生列表 */
-.student-item { padding: 12px; border-bottom: 1px solid #2a3341; cursor: pointer; }
-.student-item.active { background: #1a4a75; border-left: 4px solid #f1c40f; }
+.student-item {
+    padding: 12px;
+    border-bottom: 1px solid (--bg);
+    cursor: pointer;
+}
+
+.student-item.active {
+    background: (--bg);
+    border-left: 4px solid (--hilight)0f;
+}
+
 /*inset: 0覆盖整个屏幕，background: rgba(0,0,0,0.9)，半透明几乎不可见，最顶层：普通面板：1～10。浮窗：100。全屏遮罩：1000 起步，登录框永远居中显示*/
 
-#login-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 1000; display: flex; align-items: center; justify-content: center; }
+#login-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.9);
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
 /*margin: 8px 0,输入项之间留间距*/
-.login-box { background: #fff; padding: 30px; border-radius: 12px; width: 300px; color: #333; }
-.login-box input, .login-box select { width: 100%; margin: 8px 0; padding: 10px; border: 1px solid #ccc; border-radius: 6px; }
-.btn-primary { width: 100%; padding: 12px; background: var(--primary); color: #fff; border: none; border-radius: 6px; cursor: pointer; }
+.login-box {
+    background: (--text)f;
+    padding: 30px;
+    border-radius: 12px;
+    width: 300px;
+    color: (--bg);
+}
+
+.login-box input,
+.login-box select {
+    width: 100%;
+    margin: 8px 0;
+    padding: 10px;
+    border: 1px solid (--bg);
+    border-radius: 6px;
+}
+
+.btn-primary {
+    width: 100%;
+    padding: 12px;
+    background: var(--primary);
+    color: (--text);
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+}
+
 /*.hide { display: none !important; }任何元素，只要在class list 添加这个类属性，将被隐藏*/
