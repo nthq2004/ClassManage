@@ -70,8 +70,8 @@ export class Gauge {
        刻度（完全按数值生成）
     =============================== */
     _drawTicks() {
-        const majorStep = 10;   // 主刻度：10
-        const minorStep = 5;    // 副刻度：5（船舶常见）
+        const majorStep = (this.max-this.min)/10;   // 主刻度：10
+        const minorStep = (this.max-this.min)/20;    // 副刻度：5（船舶常见）
 
         for (let v = this.min; v <= this.max + 0.0001; v += minorStep) {
 
