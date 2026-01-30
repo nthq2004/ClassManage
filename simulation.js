@@ -27,7 +27,7 @@ export class SimulationEngine {
         this.createActionBtn('Pipe', 120, 80, '#27ae60', '自动连管');
 
         const gauge = new Gauge({
-            layer,
+            layer:this.layer,
             id: 'gaugePressure',
             name: '压力表',
             x: 180,
