@@ -1,4 +1,4 @@
-import { Gauge } from './gauge.js';
+import { Gauge } from './guage.js';
 /*对外声明的类，构造时要传入画布ID，和处理函数，所有的仿真对象都包含在这个文件 */
 export class SimulationEngine {
     constructor(containerId, onAction) {
