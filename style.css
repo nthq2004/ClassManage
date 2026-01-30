@@ -37,7 +37,7 @@ body {
     flex-shrink: 0;
     display: flex;
     background: var(--panel);
-    border-right: 1px solid (--primary);
+    border-right: 2px solid (--primary);
     flex-direction: column;
 }
 
@@ -75,8 +75,8 @@ body {
 /*justify-content: space-between几个组件等距离、留空排列*/
 #status-bar {
     height: 20px;
-    background: var(--bg);
-    border-top: 1px solid var(--primary);
+    background: var(--panel);
+    border-top: 2px solid var(--primary);
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -118,14 +118,16 @@ body {
 
 /* 在线学生列表 */
 .student-item {
+    background: var(--bg);
+    color:var(--text);
     padding: 12px;
-    border-bottom: 1px solid var(--bg);
     cursor: pointer;
 }
 
 .student-item.active {
-    background: (--bg);
-    border-left: 4px solid var(--hilight);
+    background: var(--bg);
+    color: var(--hilight);
+    border-left: 4px solid var(--primary);
 }
 
 /*inset: 0覆盖整个屏幕，background: rgba(0,0,0,0.9)，半透明几乎不可见，最顶层：普通面板：1～10。浮窗：100。全屏遮罩：1000 起步，登录框永远居中显示*/
