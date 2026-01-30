@@ -24,14 +24,14 @@ export class SimulationEngine {
         // 创建船舶柴油机冷却水系统组件
         this.createComp('Diesel', 50, 80, '#e67e22', '柴油机');
         // 功能控制组
-        this.createActionBtn('Pipe', 120, 80, '#27ae60', '自动连管');
+        this.createActionBtn('Pipe', 220, 80, '#27ae60', '自动连管');
 
         const gauge = new Gauge({
             layer:this.layer,
             id: 'gaugePressure',
             name: '压力表',
             x: 180,
-            y: 200,
+            y: 400,
             min: 0,
             max: 100,
             radius: 130
