@@ -118,15 +118,16 @@ body {
 
 /* 在线学生列表 */
 .student-item {
-    background: var(--bg);
-    color:var(--text);
-    padding: 12px;
+    background: var(--panel);
+    color: var(--text);
+    padding: 5px, 5px;
     cursor: pointer;
 }
 
 .student-item.active {
-    background: var(--bg);
+    background: var(--panel);
     color: var(--hilight);
+    padding: 5px, 5px;
     border-left: 4px solid var(--primary);
 }
 

@@ -143,7 +143,7 @@ function renderUserList(users) {
     if (!list) return;   //学生端，没有这个
     list.innerHTML = users.filter(u => u.role === 'STUDENT').map(u => `
         <div class="student-item ${window.selectedSid === u.userId ? 'active' : ''}" 
-             style="padding: 10px 5px;color: #3498db"
+             style="padding: 5px 5px"
              onclick="selectStudent('${u.userId}', '${u.userName}')">
             <div style="font-weight:bold">${u.userName} ${u.userId}</div>
         </div>
