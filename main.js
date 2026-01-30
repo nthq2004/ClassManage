@@ -172,7 +172,7 @@ document.addEventListener('DOMContentLoaded', () => {
             // 加载班级列表,教师端多的东西：侧边栏（班级选择、学生列表）、信息栏（3个模式按钮）
             window.network.fetchClasses().then(list => {
                 const sel = document.getElementById('clsSel');
-                sel.innerHTML = list.map(c => `<option value="${c}" ${c === myInfo.className ? 'selected' : ''} style="fontsize:14px;background:var(--primary)">${c}</option>`).join('');
+                sel.innerHTML = list.map(c => `<option value="${c}" ${c === myInfo.className ? 'selected' : ''} >${c}</option>`).join('');
             });
         }
 

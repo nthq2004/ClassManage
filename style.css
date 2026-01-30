@@ -43,6 +43,7 @@ body {
 
 #clsSel{
     width: 100vw;
+    height: 30px;
     padding: 5px;
     font-size: 16px;
 }
