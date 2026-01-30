@@ -26,9 +26,9 @@ window.network = new NetworkManager(BASE_URL, (data) => {
         updateUI();
     }
     if (data.type === 'ST_SELECT') {
-    window.selectedSid = (window.selectedSid === data.selid) ? null : data.selid;
-    renderUserList(window.onlineUsers || []);
-    updateUI();
+        window.selectedSid = (window.selectedSid === data.selid) ? null : data.selid;
+        renderUserList(window.onlineUsers || []);
+        updateUI();
     }
     // 模式同步逻辑
     if (myRole === 'STUDENT') {
@@ -119,7 +119,7 @@ function updateUI() {
     //刷新信息栏模式的显示，文字显示当前模式
     const modes = { TRAIN: '自由训练模式', DEMO: '教师演示模式', PRACTICE: '学生演练模式' };
     document.getElementById('mode-display').innerText = modes[currentMode];
-    
+
     //底部状态栏显示：演练模式看有没有同学选中，其它显示系统运行正常
     const midStatus = document.getElementById('status-mid');
     if (currentMode === 'PRACTICE') {
@@ -131,7 +131,7 @@ function updateUI() {
     //教师收到该消息，同步主讲教师的模式操纵状态
     if (myRole === 'TEACHER') {
         document.querySelectorAll('.m-btn').forEach(btn => {
-        btn.classList.toggle('active', btn.getAttribute('data-mode') === currentMode);
+            btn.classList.toggle('active', btn.getAttribute('data-mode') === currentMode);
         });
     }
 }
@@ -143,8 +143,7 @@ function renderUserList(users) {
     if (!list) return;   //学生端，没有这个
     list.innerHTML = users.filter(u => u.role === 'STUDENT').map(u => `
         <div class="student-item ${window.selectedSid === u.userId ? 'active' : ''}" 
-             style="padding: 5px 5px"
-             onclick="selectStudent('${u.userId}', '${u.userName}')">
+            onclick="selectStudent('${u.userId}', '${u.userName}')">
             <div style="font-weight:bold">${u.userName} ${u.userId}</div>
         </div>
     `).join('');

@@ -41,6 +41,13 @@ body {
     flex-direction: column;
 }
 
+#clsSel{
+    width: 100vw;
+    padding: 5px;
+    font-size: 16px;
+}
+
+
 /*flex: 1--占据父容器中除固定宽度元素外的所有剩余空间，flex-direction: column子元素纵向排列，默认是水平排列*/
 #main {
     flex: 1;
