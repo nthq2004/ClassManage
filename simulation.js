@@ -44,7 +44,7 @@ export class SimulationEngine {
 
     /*每一个功能设备都是一个group，典型包括外壳、小组件、文字等，name属性用.查找，代表一类设备或一类属性，id属性用#查找，代表独一无二节点 */
     createComp(id, x, y, color, label) {
-        const group = new Konva.Group({ x, y, id, name: 'device' });
+        const group = new Konva.Group({ x, y, id, name: 'device' ,draggable: true });
         group.add(new Konva.Rect({ width: 150, height: 90, fill: color, stroke: '#fff', cornerRadius: 5 }));
         /*listening: false,不参与点击事件，Canvas不会进行命中检测 */
         group.add(new Konva.Text({ text: label, x: 10, y: 35, fill: '#fff', fontStyle: 'bold', listening: false }));
@@ -67,7 +67,7 @@ export class SimulationEngine {
 
     createActionBtn(id, x, y, color, label) {
         /*这些是功能按键，不是设备，没有device的name属性 */
-        const btn = new Konva.Group({ x, y, id });
+        const btn = new Konva.Group({ x, y, id ,draggable: true });
         btn.add(new Konva.Rect({ width: 130, height: 40, fill: color, cornerRadius: 20 }));
         btn.add(new Konva.Text({ text: label, x: 35, y: 14, fill: '#fff', listening: false }));
         btn.on('click tap', () => {
