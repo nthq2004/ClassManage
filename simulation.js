@@ -1,3 +1,4 @@
+import { Gauge } from './gauge.js';
 /*对外声明的类，构造时要传入画布ID，和处理函数，所有的仿真对象都包含在这个文件 */
 export class SimulationEngine {
     constructor(containerId, onAction) {
@@ -20,20 +21,17 @@ export class SimulationEngine {
     }
 
     init() {
-        // 创建船舶柴油机冷却水系统组件
-        this.createComp('Diesel', 50, 80, '#e67e22', '柴油机');
-        this.createComp('Pump', 50, 250, '#3498db', '主淡水泵');
-        this.createComp('Cooler', 300, 80, '#1abc9c', '淡水冷却器');
-        this.createComp('Valve', 300, 250, '#9b59b6', '电动三通调节阀');
-        this.createComp('PID', 550, 80, '#2c3e50', '数字PID控制器');
-        this.createComp('Transmitter', 550, 250, '#7f8c8d', '温度变送器');
-        
-        // 功能控制组
-        this.createActionBtn('Pipe', 10, 500, '#27ae60', '自动连管');
-        this.createActionBtn('Wire', 160, 500, '#27ae60', '自动接线');
-        this.createActionBtn('Load', 310, 500, '#f39c12', '负荷设置');
-        this.createActionBtn('Fault', 460, 500, '#e74c3c', '故障设置');
-        
+       const gauge = new Gauge({
+            layer,
+            id: 'gaugePressure',
+            name: '压力表',
+            x: 100,
+            y: 100,
+            min: 0,
+            max: 100,
+            radius: 90
+        })
+
         this.layer.draw();
         window.addEventListener('resize', () => this.fit());
     }
