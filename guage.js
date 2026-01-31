@@ -311,7 +311,7 @@ export class Gauge {
     =============================== */
     _drawTerminals() {
         // 以垂直正下（-90°）为中心，左右各偏 30° -> -120° 与 -60°
-        const angles = [-120, -60];
+        const angles = [-150, 150];
         const r = this.radius + 10; // 放在表盘外一点
         this.terminals = [];
         angles.forEach((deg, idx) => {
