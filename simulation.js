@@ -37,7 +37,7 @@ export class SimulationEngine {
             y: 400,
             min: 0,
             max: 20,
-            value: 12,
+            value: 16,
             radius: 80,
             options: {
                 type:'aGauge',
@@ -50,6 +50,7 @@ export class SimulationEngine {
     }
 
     onTermClick(termShape) {
+        this.onAction('termClick', null);// 通知外部有端子被点击
         if (!termShape) return;
         // 首次选择
         if (!this.selectedTerminal) {
@@ -75,7 +76,7 @@ export class SimulationEngine {
                 type: termShape.getAttr('type')
             });
             // 外部可通过 onAction 处理新连线事件（可选）
-            if (typeof this.onAction === 'function') this.onAction('conn', this.conns);
+            this.onAction('conn', this.conns);
         }
         // 清除选择样式
         this.selectedTerminal.stroke('#333');
