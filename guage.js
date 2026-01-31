@@ -175,8 +175,8 @@ export class Gauge {
         const w = 60;
         const h = 24;
         const x = -w / 2;
-        // 向上移动一点（原 0.45 -> 0.38）
-        const y = this.radius * 0.38;
+        // 向下移动一点（原 0.38 -> 0.44）
+        const y = this.radius * 0.44;
 
         this.lcdGroup = new Konva.Group({
             x: 0,
@@ -209,13 +209,13 @@ export class Gauge {
             fillLinearGradientColorStops: [0, '#0b2a0b', 0.6, '#042404', 1, '#072207']
         }));
 
-        // 数字文本
+        // 数字文本（初始显示保留一位小数）
         this.lcdText = new Konva.Text({
             x: x + 4,
             y: 4,
             width: w - 8,
             align: 'center',
-            text: this.min.toString(),
+            text: Number(this.min).toFixed(1),
             fontSize: 14,
             fontFamily: 'monospace',
             fill: '#7fff7f'
@@ -232,13 +232,13 @@ export class Gauge {
         const h = 20;
         const x = -w / 2;
 
-        // 名称向下移动一些，且确保位于轴心（y=0）下方
+        // 名称上移一些，确保位于液晶屏上方且仍在轴心下方
         let y;
         if (this.lcdGroup) {
-            // 将名称放在液晶屏上方一点，但仍保持在轴心下方
-            y = Math.max(8, this.lcdGroup.y() - 8);
+            const desired = this.lcdGroup.y() - h - 12; // 比之前上移更多，留出间隙
+            y = Math.max(8, desired); // 最小为 8，确保在轴心（y=0）下方
         } else {
-            y = Math.max(8, this.radius * 0.15);
+            y = Math.max(8, this.radius * 0.12);
         }
 
         this.nameText = new Konva.Text({
@@ -281,13 +281,13 @@ export class Gauge {
         });
         this.tween.play();
 
-        // LCD 数字动画（线性插值）
+        // LCD 数字动画（线性插值，保留一位小数）
         const duration = 800;
         const startTime = Date.now();
         this._lcdInterval = setInterval(() => {
             const t = Math.min(1, (Date.now() - startTime) / duration);
             const cur = startValue + (endValue - startValue) * t;
-            this.lcdText.text(Math.round(cur).toString());
+            if (this.lcdText) this.lcdText.text(cur.toFixed(1));
             if (this.layer && this.layer.batchDraw) this.layer.batchDraw();
             if (t === 1) {
                 clearInterval(this._lcdInterval);
