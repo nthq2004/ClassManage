@@ -48,7 +48,6 @@ export class SimulationEngine {
     }
 
     onTermClick(termShape) {
-        this.onAction('termClick', null);// 通知外部有端子被点击
         if (!termShape) return;
         // 首次选择
         if (!this.selectedTerminal) {

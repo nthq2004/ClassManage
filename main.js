@@ -36,9 +36,9 @@ window.network = new NetworkManager(BASE_URL, (data) => {
         if (currentMode === 'DEMO') {
             engine.isLocked = true; // 演示模式：学生不可操作，收到教师指令，设置设备状态。
             if (data.type === 'TE_CMD') engine.updateState(data.deviceId, data.action);
-        } else if (currentMode === 'PRACTICE') {
+/*         } else if (currentMode === 'PRACTICE') {
             const isMe = window.selectedSid === myInfo.userId;  //这个非常关键，消息是教师选择的学生是发出的，但消息是广播，所有学生都收到，如果是发个我的，isMe=true, isLocked=false，才可操作。
-            engine.isLocked = !isMe; // 仅选中的学生可操作            
+            engine.isLocked = !isMe; // 仅选中的学生可操作   */          
         } else {
             engine.isLocked = false;
         }
@@ -183,14 +183,11 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('login-overlay').style.display = 'flex';
     }
 });
-// 在 main.js 中，确保针对 Touch 事件做了优化
-/*document.addEventListener('touchstart', function (e) {
-    if (e.touches.length > 1) e.preventDefault(); // 禁止多指缩放干扰坐标
-}, { passive: false });*/
+
 
 // 监听窗口尺寸变化，当用户旋转手机时，强制画布重新适配
-window.addEventListener('resize', () => {
+/* window.addEventListener('resize', () => {
     if (window.engine) {
         window.engine.fit();
     }
-});
+}); */
