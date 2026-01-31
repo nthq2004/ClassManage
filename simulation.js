@@ -29,12 +29,12 @@ export class SimulationEngine {
         const gauge = new Gauge({
             layer:this.layer,
             id: 'gaugePressure',
-            name: '压力表',
+            name: '',
             x: 180,
             y: 400,
             min: 0,
             max: 100,
-            radius: 80
+            radius: 100
         })
         gauge.setValue(50);
 
