@@ -20,6 +20,9 @@ export class Gauge {
             draggable: true
         });
 
+        // 保存名称，避免直接访问 Konva 节点属性不可靠
+        this.title = options.name ?? '';
+
         this.layer.add(this.group);
 
         // 顺序非常关键（从底到顶）
@@ -233,7 +236,7 @@ export class Gauge {
             y: y,
             width: w,
             align: 'center',
-            text: (this.group && this.group.name) ? String(this.group.name) : '',
+            text: String(this.title ?? ''),
             fontSize: 14,
             fontStyle: 'bold',
             fill: '#222',
