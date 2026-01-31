@@ -267,7 +267,6 @@ export class Gauge {
        设置数值（动画）
     =============================== */
     setValue(value) {
-        this.value = value;
         value = Math.max(this.min, Math.min(this.max, value));
         const angle = this.valueToAngle(value);
 
@@ -276,10 +275,6 @@ export class Gauge {
             clearInterval(this._lcdInterval);
             this._lcdInterval = null;
         }
-
-        const startValue = this._currentValue ?? this.min;
-        const endValue = value;
-        this._currentValue = endValue;
 
         // 指针动画
         this.tween = new Konva.Tween({
@@ -290,6 +285,9 @@ export class Gauge {
         });
         this.tween.play();
 
+        const startValue = this._currentValue ?? this.min;
+        const endValue = this.value = value;
+        this._currentValue = endValue;
         // LCD 数字动画（线性插值，保留一位小数）
         const duration = 800;
         const startTime = Date.now();
