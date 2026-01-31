@@ -7,7 +7,8 @@ export class Gauge {
         this.startAngle = -120;
         this.endAngle = 120;
 
-        this.radius = options.radius ?? 130;
+        // 半径限定在 [70, 140]
+        this.radius = Math.max(70, Math.min(140, options.radius ?? 130));
         this.textRadius = this.radius - 26;
 
         this.layer = options.layer;
@@ -230,8 +231,15 @@ export class Gauge {
         const w = 140;
         const h = 20;
         const x = -w / 2;
-        // 优先基于 lcdGroup 的位置，确保名称在液晶屏上方；回退到原始计算
-        const y = (this.lcdGroup ? this.lcdGroup.y() - h - 6 : -this.radius * 0.6 - h / 2);
+
+        // 名称向下移动一些，且确保位于轴心（y=0）下方
+        let y;
+        if (this.lcdGroup) {
+            // 将名称放在液晶屏上方一点，但仍保持在轴心下方
+            y = Math.max(8, this.lcdGroup.y() - 8);
+        } else {
+            y = Math.max(8, this.radius * 0.15);
+        }
 
         this.nameText = new Konva.Text({
             x: x,
