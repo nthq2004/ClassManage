@@ -8,9 +8,9 @@ export class Gauge {
         this.startAngle = -120;
         this.endAngle = 120;
 
-        // 半径限定在 [70, 140]
-        this.radius = Math.max(70, Math.min(140, options.radius ?? 100));
-        this.textRadius = this.radius - 20;
+        // 半径限定在 [70, 140]，默认 80
+        this.radius = Math.max(70, Math.min(140, options.radius ?? 80));
+        this.textRadius = this.radius - 22;
 
         this.layer = options.layer;//一般分为3层：线缆层、组件层、UI层，仪表放在组件层，最下面，以免遮挡线缆，UI放最上层
 
@@ -35,6 +35,11 @@ export class Gauge {
         this._drawCenter();
         this._drawLcd();
         this._drawname();
+
+        // 终端点击回调（外部可传入）：function(termShape) { ... }
+        this.onTerminalClick = options.onTerminalClick || null;
+        // 在外壳正下方左右各增加一个接线柱（相隔60度），用于电路连线
+        this._drawTerminals();
 
         this.setValue(this.value);  // 初始化指针位置和LCD显示。
     }
@@ -239,9 +244,9 @@ export class Gauge {
         let y;
         if (this.lcdGroup) {
             const desired = this.lcdGroup.y() - h - 12; // 比之前上移更多，留出间隙
-            y = Math.max(8, desired); // 最小为 8，确保在轴心（y=0）下方
+            y = Math.max(12, desired); // 最小为 8，确保在轴心（y=0）下方
         } else {
-            y = Math.max(8, this.radius * 0.12);
+            y = Math.max(12, this.radius * 0.12);
         }
 
         this.nameText = new Konva.Text({
@@ -302,5 +307,36 @@ export class Gauge {
 
     getValue() {
         return this.value;
+    }
+    /* ===============================
+       在表壳正下方左右添加两个端子（相隔60度），用于连线
+    =============================== */
+    _drawTerminals() {
+        // 以垂直正下（-90°）为中心，左右各偏 30° -> -120° 与 -60°
+        const angles = [-120, -60];
+        const r = this.radius + 10; // 放在表盘外一点
+        this.terminals = [];
+        angles.forEach((deg, idx) => {
+            const rad = Konva.getAngle(deg - 90); // 与刻度计算保持一致的角度转换
+            const x = r * Math.cos(rad);
+            const y = r * Math.sin(rad);
+            const id = `${this.group.id() || this.title}_term_${idx === 0 ? 'i' : 'o'}`;
+            const fill = idx === 0 ? '#ff4757' : '#2f3542';
+            const term = new Konva.Circle({
+                x, y,
+                radius: 8,
+                fill,
+                stroke: '#333',
+                id
+            });
+            term.setAttr('type', 'wire');
+            term.setAttr('termId', id);
+            term.on('mousedown touchstart', (e) => {
+                e.cancelBubble = true;
+                if (typeof this.onTerminalClick === 'function') this.onTerminalClick(term);
+            });
+            this.group.add(term);
+            this.terminals.push(term);
+        });
     }
 }

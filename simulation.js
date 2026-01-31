@@ -17,6 +17,8 @@ export class SimulationEngine {
         /*这是设备对象数组，每个设备都是一个group，可根据id找到对应设备的group，devices[Pump]就获得Pump的group，可对group内的组件（圆形、矩形、线条）进行操作 */
         this.devices = {};
         /*构造函数里面，一般会调用初始化函数 */
+        this.selectedTerminal = null; // 当前选中的端子,用于连线操作。
+        this.conns = []; // 存储所有连线对象的数组。
         this.init();
     }
 
