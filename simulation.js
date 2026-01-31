@@ -37,7 +37,7 @@ export class SimulationEngine {
             y: 400,
             min: 0,
             max: 20,
-            value: 16,
+            value: 12.6,
             radius: 80,
             options: {
                 type:'aGauge',
