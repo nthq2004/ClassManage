@@ -284,6 +284,8 @@ export class Gauge {
                 stroke: '#333',
                 id
             });
+            term.strokeWidth(2);
+            term.stroke('#333');
             term.setAttr('type', 'wire');
             term.setAttr('termId', id);
             term.on('mousedown touchstart', (e) => {
