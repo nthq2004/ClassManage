@@ -39,10 +39,8 @@ export class SimulationEngine {
             max: 20,
             value: 12.6,
             radius: 80,
-            options: {
-                type:'aGauge',
-                onTerminalClick: this.onTermClick.bind(this)
-            }
+            type:'aGauge',
+            onTerminalClick: this.onTermClick.bind(this)
         })
 
         this.layer.draw();
