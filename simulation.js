@@ -34,9 +34,9 @@ export class SimulationEngine {
             y: 400,
             min: 0,
             max: 20,
-            radius: 70
+            radius: 180
         })
-        gauge.setValue(12);
+        gauge.setValue(16);
 
         this.layer.draw();
         window.addEventListener('resize', () => this.fit());
