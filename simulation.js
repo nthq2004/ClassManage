@@ -28,15 +28,15 @@ export class SimulationEngine {
 
         const gauge = new Gauge({
             layer:this.layer,
-            id: 'gaugePressure',
-            name: '压力表',
+            id: 'gaugeCurrent',
+            name: '电流表',
             x: 180,
             y: 400,
             min: 0,
-            max: 100,
-            radius: 100
+            max: 20,
+            radius: 50
         })
-        gauge.setValue(50);
+        gauge.setValue(12);
 
         this.layer.draw();
         window.addEventListener('resize', () => this.fit());
