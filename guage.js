@@ -2,16 +2,17 @@ export class Gauge {
     constructor(options) {
         this.min = options.min ?? 0;
         this.max = options.max ?? 100;
+        this.value = options.value ?? this.min;
 
         // ✔ 船舶仪表标准：270°,这里采用-120° ~ +120°，240度
         this.startAngle = -120;
         this.endAngle = 120;
 
         // 半径限定在 [70, 140]
-        this.radius = Math.max(70, Math.min(140, options.radius ?? 130));
-        this.textRadius = this.radius - 26;
+        this.radius = Math.max(70, Math.min(140, options.radius ?? 100));
+        this.textRadius = this.radius - 20;
 
-        this.layer = options.layer;
+        this.layer = options.layer;//一般分为3层：线缆层、组件层、UI层，仪表放在组件层，最下面，以免遮挡线缆，UI放最上层
 
         this.group = new Konva.Group({
             x: options.x,
@@ -34,6 +35,8 @@ export class Gauge {
         this._drawCenter();
         this._drawLcd();
         this._drawname();
+
+        this.setValue(this.value);  // 初始化指针位置和LCD显示。
     }
 
     /* ===============================
@@ -51,7 +54,7 @@ export class Gauge {
             new Konva.Circle({
                 x: 0,
                 y: 0,
-                radius: this.radius + 10,
+                radius: this.radius + 6,
                 stroke: '#333',
                 strokeWidth: 4,
                 // 金属质感：径向渐变
@@ -259,6 +262,7 @@ export class Gauge {
        设置数值（动画）
     =============================== */
     setValue(value) {
+        this.value = value;
         value = Math.max(this.min, Math.min(this.max, value));
         const angle = this.valueToAngle(value);
 
@@ -294,5 +298,9 @@ export class Gauge {
                 this._lcdInterval = null;
             }
         }, 30);
+    }
+
+    getValue() {
+        return this.value;
     }
 }

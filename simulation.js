@@ -29,14 +29,14 @@ export class SimulationEngine {
         const gauge = new Gauge({
             layer:this.layer,
             id: 'gaugeCurrent',
-            name: '电流表',
+            name: '电流表mA',
             x: 180,
             y: 400,
             min: 0,
             max: 20,
+            value: 22,
             radius: 80
         })
-        gauge.setValue(16);
 
         this.layer.draw();
         window.addEventListener('resize', () => this.fit());
