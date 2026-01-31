@@ -174,7 +174,8 @@ export class Gauge {
         const w = 70;
         const h = 28;
         const x = -w / 2;
-        const y = this.radius * 0.45; // 在轴心下面
+        // 向上移动一点（原 0.45 -> 0.38）
+        const y = this.radius * 0.38;
 
         this.lcdGroup = new Konva.Group({
             x: 0,
@@ -229,7 +230,8 @@ export class Gauge {
         const w = 140;
         const h = 20;
         const x = -w / 2;
-        const y = -this.radius * 0.6 - h / 2;
+        // 优先基于 lcdGroup 的位置，确保名称在液晶屏上方；回退到原始计算
+        const y = (this.lcdGroup ? this.lcdGroup.y() - h - 6 : -this.radius * 0.6 - h / 2);
 
         this.nameText = new Konva.Text({
             x: x,
