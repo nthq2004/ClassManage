@@ -263,10 +263,43 @@ export class Gauge {
 
         this.group.add(this.nameText);
     }
+   /* ===============================
+       在表壳正下方左右添加两个端子（相隔60度），用于连线
+    =============================== */
+    _drawTerminals() {
+        // 以垂直正下（-90°）为中心，左右各偏 30° -> -120° 与 -60°
+        const angles = [-150, 150];
+        const r = this.radius + 10; // 放在表盘外一点
+        this.terminals = [];
+        angles.forEach((deg, idx) => {
+            const rad = Konva.getAngle(deg - 90); // 与刻度计算保持一致的角度转换
+            const x = r * Math.cos(rad);
+            const y = r * Math.sin(rad);
+            const id = `${this.group.id() || this.title}_term_${idx === 0 ? 'p' : 'n'}`;
+            const fill = idx === 0 ? '#ff4757' : '#2f3542';
+            const term = new Konva.Circle({
+                x, y,
+                radius: 8,
+                fill,
+                stroke: '#333',
+                id
+            });
+            term.setAttr('type', 'wire');
+            term.setAttr('termId', id);
+            term.on('mousedown touchstart', (e) => {
+                e.cancelBubble = true;
+                if (typeof this.onTerminalClick === 'function') this.onTerminalClick(term);
+            });
+            this.group.add(term);
+            this.terminals.push(term);
+        });
+    }
+
     /* ===============================
        设置数值（动画）
     =============================== */
     setValue(value) {
+        this.value = value;
         value = Math.max(this.min, Math.min(this.max, value));
         const angle = this.valueToAngle(value);
 
@@ -286,7 +319,7 @@ export class Gauge {
         this.tween.play();
 
         const startValue = this._currentValue ?? this.min;
-        const endValue = this.value = value;
+        const endValue = this.value;
         this._currentValue = endValue;
         // LCD 数字动画（线性插值，保留一位小数）
         const duration = 800;
@@ -306,35 +339,5 @@ export class Gauge {
     getValue() {
         return this.value;
     }
-    /* ===============================
-       在表壳正下方左右添加两个端子（相隔60度），用于连线
-    =============================== */
-    _drawTerminals() {
-        // 以垂直正下（-90°）为中心，左右各偏 30° -> -120° 与 -60°
-        const angles = [-150, 150];
-        const r = this.radius + 10; // 放在表盘外一点
-        this.terminals = [];
-        angles.forEach((deg, idx) => {
-            const rad = Konva.getAngle(deg - 90); // 与刻度计算保持一致的角度转换
-            const x = r * Math.cos(rad);
-            const y = r * Math.sin(rad);
-            const id = `${this.group.id() || this.title}_term_${idx === 0 ? 'i' : 'o'}`;
-            const fill = idx === 0 ? '#ff4757' : '#2f3542';
-            const term = new Konva.Circle({
-                x, y,
-                radius: 8,
-                fill,
-                stroke: '#333',
-                id
-            });
-            term.setAttr('type', 'wire');
-            term.setAttr('termId', id);
-            term.on('mousedown touchstart', (e) => {
-                e.cancelBubble = true;
-                if (typeof this.onTerminalClick === 'function') this.onTerminalClick(term);
-            });
-            this.group.add(term);
-            this.terminals.push(term);
-        });
-    }
+ 
 }

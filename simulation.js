@@ -28,6 +28,7 @@ export class SimulationEngine {
         // 功能控制组
         this.createActionBtn('Pipe', 220, 80, '#27ae60', '自动连管'); */
 
+
         const gauge = new Gauge({
             layer:this.layer,
             id: 'gaugeCurrent',
@@ -37,13 +38,51 @@ export class SimulationEngine {
             min: 0,
             max: 20,
             value: 22,
-            radius: 80
+            radius: 80,
+            options: {
+                type:'aGauge',
+                onTerminalClick: this.onTermClick.bind(this)
+            }
         })
 
         this.layer.draw();
         window.addEventListener('resize', () => this.fit());
     }
 
+    onTermClick(termShape) {
+        if (!termShape) return;
+        // 首次选择
+        if (!this.selectedTerminal) {
+            this.selectedTerminal = termShape;
+            termShape.stroke('#f1c40f');
+            termShape.strokeWidth(4);
+            this.layer.batchDraw();
+            return;
+        }
+        // 取消选择同一端子
+        if (this.selectedTerminal === termShape) {
+            this.selectedTerminal.stroke('#333');
+            this.selectedTerminal.strokeWidth(2);
+            this.selectedTerminal = null;
+            this.layer.batchDraw();
+            return;
+        }
+        // 不同端子，若类型相同则建立连接
+        if (this.selectedTerminal.getAttr('type') === termShape.getAttr('type')) {
+            this.conns.push({
+                from: this.selectedTerminal.getAttr('termId'),
+                to: termShape.getAttr('termId'),
+                type: termShape.getAttr('type')
+            });
+            // 外部可通过 onAction 处理新连线事件（可选）
+            if (typeof this.onAction === 'function') this.onAction('conn', this.conns);
+        }
+        // 清除选择样式
+        this.selectedTerminal.stroke('#333');
+        this.selectedTerminal.strokeWidth(2);
+        this.selectedTerminal = null;
+        this.layer.batchDraw();
+    }
     /*每一个功能设备都是一个group，典型包括外壳、小组件、文字等，name属性用.查找，代表一类设备或一类属性，id属性用#查找，代表独一无二节点 */
 /*     createComp(id, x, y, color, label) {
         const group = new Konva.Group({ x, y, id, name: 'device' ,draggable: true });
