@@ -41,7 +41,7 @@ export class SimulationEngine {
             radius: 80,
             options: {
                 type:'aGauge',
-                onTerminalClick: this.onTermClick
+                onTerminalClick: this.onTermClick.bind(this)
             }
         })
 
