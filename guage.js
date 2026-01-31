@@ -171,8 +171,8 @@ export class Gauge {
        中心下方的LCD显示屏
     =============================== */
     _drawLcd() {
-        const w = 70;
-        const h = 28;
+        const w = 60;
+        const h = 24;
         const x = -w / 2;
         // 向上移动一点（原 0.45 -> 0.38）
         const y = this.radius * 0.38;
