@@ -41,7 +41,7 @@ export class Gauge {
         // 在外壳正下方左右各增加一个接线柱（相隔60度），用于电路连线
         this._drawTerminals();
 
-        this.setValue(this.value);  // 初始化指针位置和LCD显示。
+        this.setValue(22);// 初始化指针位置和LCD显示。
     }
 
     /* ===============================
