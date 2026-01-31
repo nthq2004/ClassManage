@@ -34,7 +34,7 @@ export class SimulationEngine {
             y: 400,
             min: 0,
             max: 20,
-            radius: 180
+            radius: 80
         })
         gauge.setValue(16);
 
