@@ -37,11 +37,11 @@ export class SimulationEngine {
             y: 400,
             min: 0,
             max: 20,
-            value: 22,
+            value: 12,
             radius: 80,
             options: {
                 type:'aGauge',
-                onTerminalClick: this.onTermClick.bind(this)
+                onTerminalClick: this.onTermClick
             }
         })
 
@@ -56,7 +56,7 @@ export class SimulationEngine {
             this.selectedTerminal = termShape;
             termShape.stroke('#f1c40f');
             termShape.strokeWidth(4);
-            this.layer.batchDraw();
+            this.layer.draw();
             return;
         }
         // 取消选择同一端子
@@ -64,7 +64,7 @@ export class SimulationEngine {
             this.selectedTerminal.stroke('#333');
             this.selectedTerminal.strokeWidth(2);
             this.selectedTerminal = null;
-            this.layer.batchDraw();
+            this.layer.draw();
             return;
         }
         // 不同端子，若类型相同则建立连接
@@ -81,7 +81,7 @@ export class SimulationEngine {
         this.selectedTerminal.stroke('#333');
         this.selectedTerminal.strokeWidth(2);
         this.selectedTerminal = null;
-        this.layer.batchDraw();
+        this.layer.draw();
     }
     /*每一个功能设备都是一个group，典型包括外壳、小组件、文字等，name属性用.查找，代表一类设备或一类属性，id属性用#查找，代表独一无二节点 */
 /*     createComp(id, x, y, color, label) {
