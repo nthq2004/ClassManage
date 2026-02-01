@@ -12,7 +12,7 @@ export class SimulationEngine {
             height: this.container.offsetHeight
         });
         this.devLayer = new Konva.Layer();
-        this.stage.add(this.layer);
+        this.stage.add(this.devLayer);
         this.lineLayer = new Konva.Layer();
         this.stage.add(this.lineLayer);
         /*这是设备操作的主处理逻辑函数，由main.js定义*/
