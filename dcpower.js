@@ -9,8 +9,8 @@ export class DCPower {
         this.x = config.x || 100;
         this.y = config.y || 100;
         // 动态尺寸：最小宽120，高140,最大宽240，高220，默认120x100
-        this.width = Math.max(140, Math.min(config.width || 140, 200));
-        this.height = Math.max(130, Math.min(config.height || 130, 190));
+        this.width = Math.max(145, Math.min(config.width || 145, 205));
+        this.height = Math.max(135, Math.min(config.height || 135, 195));
         // 状态变量
         this.isOn = true;
         this.voltage = 24;
@@ -96,7 +96,7 @@ export class DCPower {
 
     // 4. 控制面板（开关、旋钮、指示灯）
     _drawControls() {
-        const ctrlY = 80; // 控制区起始高度
+        const ctrlY = 75; // 控制区起始高度
 
         // --- 凹陷式电源键 ---
         this.powerBtnGroup = new Konva.Group({ x: 12, y: ctrlY });

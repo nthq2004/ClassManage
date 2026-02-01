@@ -60,6 +60,8 @@ export class SimulationEngine {
             name: '直流电源24V',
             x: 50,
             y: 50,
+            width: 300,
+            height: 300,
             voltage: 24,
             onTerminalClick: this.onTermClick.bind(this)
         })
