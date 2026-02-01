@@ -76,7 +76,7 @@ export class SimulationEngine {
             this.selectedTerminal = termShape;
             termShape.stroke('#f1c40f');
             termShape.strokeWidth(4);
-            this.layer.draw();
+            this.devLayer.draw();
             return;
         }
         // 取消选择同一端子
@@ -84,7 +84,7 @@ export class SimulationEngine {
             this.selectedTerminal.stroke('#333');
             this.selectedTerminal.strokeWidth(2);
             this.selectedTerminal = null;
-            this.layer.draw();
+            this.devLayer.draw();
             return;
         }
         // 不同端子，若类型相同则建立连接
