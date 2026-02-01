@@ -96,13 +96,13 @@ export class DCPower {
 
     // 4. 控制面板（开关、旋钮、指示灯）
     _drawControls() {
-        const ctrlY = 75; // 控制区起始高度
+        const ctrlY = 78; // 控制区起始高度
 
         // --- 凹陷式电源键 ---
         this.powerBtnGroup = new Konva.Group({ x: 12, y: ctrlY });
 
         this.powerBtnBase = new Konva.Rect({
-            width: 30, height: 20,
+            width: 33, height: 20,
             fill: '#bdc3c7',
             stroke: '#7f8c8d',
             strokeWidth: 1,
