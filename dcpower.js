@@ -8,14 +8,16 @@ export class DCPower {
         this.layer = config.layer;
         this.x = config.x || 100;
         this.y = config.y || 100;
-        // 动态尺寸：最小宽100，高80,最大宽240，高220，默认120x100
-        this.width = Math.max(120, Math.min(config.width ||120, 160));
-        this.height = Math.max(140, Math.min(config.height||140, 180));
+        // 动态尺寸：最小宽120，高140,最大宽240，高220，默认120x100
+        this.width = Math.max(120, Math.min(config.width ||120, 180));
+        this.height = Math.max(140, Math.min(config.height||140, 200));
         // 状态变量
         this.isOn = true;
         this.voltage = 24;
         this.maxVoltage = 24;
         this.terminals = []; // 存储接线柱对象
+
+        this.onTerminalClick = config.onTerminalClick || null;
 
         // Konva 组
         this.group = new Konva.Group({
@@ -36,7 +38,8 @@ export class DCPower {
         this._drawTerminals();    // 绘制接线柱
 
         this.layer.add(this.group);
-        this.layer.draw();
+        this._updateBtnStyle(); 
+        this.update();
     }
 
     // 1. 矩形外框
@@ -81,7 +84,7 @@ export class DCPower {
         this.voltageText = new Konva.Text({
             x: 10, y: 22,
             width: this.width - 20,
-            text: 'OFF',
+            text: '',
             fontSize: 22,
             fontFamily: 'monospace',
             fill: '#00ff00',
@@ -141,18 +144,19 @@ export class DCPower {
                 y: r * Math.sin(rad) - 5,
                 text: v.toString(),
                 fontSize: 9,
+                fontStyle: 'bold',
                 width: 20,
                 align: 'center',
-                fill: '#7f8c8d'
+                fill: '#0a1314'
             });
             this.knobGroup.add(txt);
         });
 
         const knobCircle = new Konva.Circle({
             radius: 18,
-            fill: '#95a5a6',
+            fill: '#e3e8e9',
             stroke: '#34495e',
-            cursor: 'pointer'
+            cursor: 'hand'
         });
 
         this.knobPointer = new Konva.Line({
@@ -189,13 +193,13 @@ export class DCPower {
     _drawTerminals() {
         const termY = this.height; // 对齐底边线
         const terminalData = [
-            { label: 'p', color: '#ff4757', x: this.width * 0.3 }, // 红
-            { label: 'n', color: '#2f3542', x: this.width * 0.7 } // 黑
+            { label: 'p', color: '#ff4757', x: this.width * 0.7 }, // 红
+            { label: 'n', color: '#2f3542', x: this.width * 0.3 } // 黑
         ];
 
         terminalData.forEach(data => {
             const term = new Konva.Circle({
-                x: terminalData.x,
+                x: data.x,
                 y: termY,
                 radius: 8,
                 fill: data.color,
