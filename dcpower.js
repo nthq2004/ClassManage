@@ -9,8 +9,8 @@ export class DCPower {
         this.x = config.x || 100;
         this.y = config.y || 100;
         // 动态尺寸：最小宽100，高80,最大宽240，高220，默认120x100
-        this.width = Math.max(100, Math.min(config.width ||120, 240));
-        this.height = Math.max(80, Math.min(config.height||100, 220));
+        this.width = Math.max(100, Math.min(config.width ||120, 200));
+        this.height = Math.max(100, Math.min(config.height||120, 200));
         // 状态变量
         this.isOn = false;
         this.voltage = 0;
@@ -54,13 +54,13 @@ export class DCPower {
     // 2. 铭牌
     _drawNameplate() {
         const title = new Konva.Text({
-            x: 10, y: 10,
-            text: `DC 24V可调直流电源`,
+            x: 10, y: 5,
+            text: `DC 24V`,
             fontSize: 10,
             fontStyle: 'bold'
         });
         const school = new Konva.Text({
-            x: this.width - 60, y: 10,
+            x: this.width - 60, y: 5,
             text: '江苏航院',
             fontSize: 10
         });
@@ -69,9 +69,9 @@ export class DCPower {
     // 3. 液晶显示屏
     _drawLCD() {
         // 液晶屏高度固定，宽度随设备调整
-        const lcdHeight = 40;
+        const lcdHeight = 30;
         const lcdBg = new Konva.Rect({
-            x: 10, y: 40,
+            x: 10, y: 20,
             width: this.width - 20,
             height: lcdHeight,
             fill: '#000',
@@ -79,10 +79,10 @@ export class DCPower {
         });
 
         this.voltageText = new Konva.Text({
-            x: 10, y: 48,
+            x: 10, y: 24,
             width: this.width - 20,
             text: 'OFF',
-            fontSize: 24,
+            fontSize: 22,
             fontFamily: 'monospace',
             fill: '#00ff00',
             align: 'center'
@@ -93,13 +93,13 @@ export class DCPower {
 
     // 4. 控制面板（开关、旋钮、指示灯）
     _drawControls() {
-        const ctrlY = 100; // 控制区起始高度
+        const ctrlY = 56; // 控制区起始高度
 
         // --- 凹陷式电源键 ---
-        this.powerBtnGroup = new Konva.Group({ x: 30, y: ctrlY });
+        this.powerBtnGroup = new Konva.Group({ x: 20, y: ctrlY });
 
         this.powerBtnBase = new Konva.Rect({
-            width: 30, height: 30,
+            width: 30, height: 20,
             fill: '#bdc3c7',
             stroke: '#7f8c8d',
             strokeWidth: 1,
@@ -110,7 +110,7 @@ export class DCPower {
         });
 
         const btnText = new Konva.Text({
-            x: -5, y: 35,
+            x: -5, y: 25,
             text: '电源键',
             fontSize: 10,
             fill: '#34495e'
@@ -124,8 +124,8 @@ export class DCPower {
         });
 
         // --- 带刻度的旋钮 ---
-        const knobX = this.width - 60;
-        const knobY = ctrlY + 20;
+        const knobX = this.width - 40;
+        const knobY = ctrlY + 10;
         this.knobGroup = new Konva.Group({ x: knobX, y: knobY });
 
         // 绘制刻度线和数字
