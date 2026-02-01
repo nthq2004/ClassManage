@@ -299,7 +299,7 @@ export class Gauge {
                 this.group.add(term);
                 this.terminals.push(term);
             });
-        } else if (this.type === 'pGauge' ) {
+        } else if (this.type === 'pGauge') {
             /** --- 气压表：在正下方（180°）创建一个矩形管路端子 --- **/
             const rad = Konva.getAngle(90);; // 正下方
             const x = r * Math.cos(rad);
@@ -307,20 +307,22 @@ export class Gauge {
             const id = `${this.group.id()}_pipe_i`;
             const fill = '#2f2b2c66'; // 灰色，代表金属管路接口;
             const term = new Konva.Rect({
-                x: x - 8, // 居中修正（矩形起点在左上角）
-                y: y - 5,
-                width: 18,
+                x: x, // 居中修正（矩形起点在左上角）
+                y: y,
+                width: 20,
                 height: 16,
                 fill: '#95a5a6', // 工业灰色，代表金属管路接口
                 cornerRadius: 2,
                 id
             });
-
             term.strokeWidth(2);
             term.stroke('#333');
             term.setAttr('type', 'pipe');
             term.setAttr('termId', id);
-
+                term.on('mousedown touchstart', (e) => {
+                    e.cancelBubble = true;
+                    this.onTerminalClick(term);
+                });
             this.group.add(term);
             this.terminals.push(term);
         }
