@@ -50,8 +50,8 @@ export class SimulationEngine {
             x: 280,
             y: 400,
             min: 0,
-            max: 1,
-            value: 0.3,
+            max: 0.2,
+            value: 0.1,
             radius: 80,
             type: 'pGauge',
             onTerminalClick: this.onTermClick.bind(this)
