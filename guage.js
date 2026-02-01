@@ -106,15 +106,15 @@ export class Gauge {
        刻度（完全按数值生成）
     =============================== */
     _drawTicks() {
-        const majorStep = (this.max - this.min) / 10;   // 主刻度：10
-        const minorStep = (this.max - this.min) / 20;    // 副刻度：5（船舶常见）
+        const majorStep = (this.max - this.min) / 10;   // 主刻度：10，0.1
+        const minorStep = (this.max - this.min) / 20;    // 副刻度：5,0.05（船舶常见）
 
         for (let v = this.min; v <= this.max + 0.0001; v += minorStep) {
 
             const angle = this.valueToAngle(v);
             const rad = Konva.getAngle(angle - 90);
 
-            const isMajor = v % majorStep === 0;
+            const isMajor = v % majorStep < 0.01;
             const len = isMajor ? 16 : 8;
 
             // 刻度线
@@ -307,9 +307,9 @@ export class Gauge {
             const id = `${this.group.id()}_pipe_i`;
             const fill = '#2f2b2c66'; // 灰色，代表金属管路接口;
             const term = new Konva.Rect({
-                x: x, // 居中修正（矩形起点在左上角）
-                y: y,
-                width: 20,
+                x: x - 8, // 居中修正（矩形起点在左上角）
+                y: y - 5,
+                width: 18,
                 height: 16,
                 fill: '#95a5a6', // 工业灰色，代表金属管路接口
                 cornerRadius: 2,
@@ -319,10 +319,10 @@ export class Gauge {
             term.stroke('#333');
             term.setAttr('type', 'pipe');
             term.setAttr('termId', id);
-                term.on('mousedown touchstart', (e) => {
-                    e.cancelBubble = true;
-                    this.onTerminalClick(term);
-                });
+            term.on('mousedown touchstart', (e) => {
+                e.cancelBubble = true;
+                this.onTerminalClick(term);
+            });
             this.group.add(term);
             this.terminals.push(term);
         }
