@@ -9,8 +9,8 @@ export class DCPower {
         this.x = config.x || 100;
         this.y = config.y || 100;
         // 动态尺寸：最小宽100，高80,最大宽240，高220，默认120x100
-        this.width = Math.max(120, Math.min(config.width ||120, 200));
-        this.height = Math.max(100, Math.min(config.height||100, 160));
+        this.width = Math.max(120, Math.min(config.width ||120, 160));
+        this.height = Math.max(140, Math.min(config.height||140, 180));
         // 状态变量
         this.isOn = false;
         this.voltage = 24;
