@@ -56,8 +56,8 @@ export class SimulationEngine {
 
         const myPower = new DCPower({
             layer: this.layer,
-            id: 'dcPower1',
-            name: '直流电源V',
+            id: 'dcPower',
+            name: '直流电源24V',
             x: 50,
             y: 50,
             voltage: 24,
