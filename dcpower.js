@@ -9,8 +9,8 @@ export class DCPower {
         this.x = config.x || 100;
         this.y = config.y || 100;
         // 动态尺寸：最小宽120，高140,最大宽240，高220，默认120x100
-        this.width = Math.max(120, Math.min(config.width ||120, 180));
-        this.height = Math.max(140, Math.min(config.height||140, 200));
+        this.width = Math.max(140, Math.min(config.width || 140, 200));
+        this.height = Math.max(160, Math.min(config.height || 160, 220));
         // 状态变量
         this.isOn = true;
         this.voltage = 24;
@@ -38,7 +38,7 @@ export class DCPower {
         this._drawTerminals();    // 绘制接线柱
 
         this.layer.add(this.group);
-        this._updateBtnStyle(); 
+        this._updateBtnStyle();
         this.update();
     }
 
@@ -59,13 +59,13 @@ export class DCPower {
         const title = new Konva.Text({
             x: 10, y: 5,
             text: `DC 24V`,
-            fontSize: 10,
+            fontSize: 12,
             fontStyle: 'bold'
         });
         const school = new Konva.Text({
             x: this.width - 60, y: 5,
             text: '江苏航院',
-            fontSize: 10
+            fontSize: 11
         });
         this.group.add(title, school);
     }
@@ -96,10 +96,10 @@ export class DCPower {
 
     // 4. 控制面板（开关、旋钮、指示灯）
     _drawControls() {
-        const ctrlY = 76; // 控制区起始高度
+        const ctrlY = 80; // 控制区起始高度
 
         // --- 凹陷式电源键 ---
-        this.powerBtnGroup = new Konva.Group({ x: 16, y: ctrlY });
+        this.powerBtnGroup = new Konva.Group({ x: 12, y: ctrlY });
 
         this.powerBtnBase = new Konva.Rect({
             width: 30, height: 20,
@@ -115,7 +115,8 @@ export class DCPower {
         const btnText = new Konva.Text({
             x: 0, y: 25,
             text: '电源键',
-            fontSize: 10,
+            fontSize: 12,
+            fontStyle: 'bold',
             fill: '#34495e'
         });
 
@@ -137,13 +138,13 @@ export class DCPower {
             // 映射 0-24V 到旋钮的角度（-150° 到 150°）
             const angle = (v / 24) * 300 - 150;
             const rad = (angle - 90) * Math.PI / 180;
-            const r = 28; // 刻度半径
+            const r = 26; // 刻度半径
 
             const txt = new Konva.Text({
                 x: r * Math.cos(rad) - 10,
                 y: r * Math.sin(rad) - 5,
                 text: v.toString(),
-                fontSize: 9,
+                fontSize: 10,
                 fontStyle: 'bold',
                 width: 20,
                 align: 'center',
@@ -153,14 +154,14 @@ export class DCPower {
         });
 
         const knobCircle = new Konva.Circle({
-            radius: 18,
+            radius: 20,
             fill: '#e3e8e9',
             stroke: '#34495e',
             cursor: 'hand'
         });
 
         this.knobPointer = new Konva.Line({
-            points: [0, 0, 0, -15],
+            points: [0, 0, 0, -18],
             stroke: '#e74c3c',
             strokeWidth: 2,
             lineCap: 'round'
@@ -246,15 +247,20 @@ export class DCPower {
     }
     // 更新显示逻辑
     update() {
+        const angle = (this.voltage / 24) * 300 - 150;
+        this.knobPointer.rotation(angle);
         if (!this.isOn) {
             this.voltageText.text('OFF');
             this.voltageText.fill('#333');
         } else {
             this.voltageText.text(this.voltage.toFixed(1) + ' V');
             this.voltageText.fill('#00ff00');
-            const angle = (this.voltage / 24) * 300 - 150;
-            this.knobPointer.rotation(angle);
         }
         this.layer.batchDraw();
+    }
+
+    // 获取当前输出电压
+    getValue() {
+        return this.isOn ? this.voltage : 0;
     }
 }
