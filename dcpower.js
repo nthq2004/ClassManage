@@ -8,7 +8,9 @@ export class DCPower {
         this.layer = config.layer;
         this.x = config.x || 100;
         this.y = config.y || 100;
-
+        // 动态尺寸：最小宽140，高120
+        this.width = Math.max(140, config.width || 240);
+        this.height = Math.max(120, config.height || 220);
         // 状态变量
         this.isOn = false;
         this.voltage = 0;
@@ -20,7 +22,7 @@ export class DCPower {
             x: this.x,
             y: this.y,
             draggable: true,
-            id: config.id || 'dc_power'
+            id: config.id || 'dcPower'
         });
 
         this._init();
@@ -39,112 +41,139 @@ export class DCPower {
 
     // 1. 矩形外框
     _drawChassis() {
-        const bg = new Konva.Rect({
-            width: 260,
-            height: 320,
-            fill: '#dfe4ea',
-            stroke: '#2f3542',
-            strokeWidth: 4,
-            cornerRadius: 10,
-            shadowBlur: 10,
-            shadowOpacity: 0.3
+        this.chassis = new Konva.Rect({
+            width: this.width,
+            height: this.height,
+            fill: '#ecf0f1',
+            stroke: '#2c3e50',
+            strokeWidth: 3,
+            cornerRadius: 5
         });
-        this.group.add(bg);
+        this.group.add(this.chassis);
     }
     // 2. 铭牌
     _drawNameplate() {
-        const titleLeft = new Konva.Text({
-            x: 20, y: 20,
-            text: 'DC 24V 可调直流电源',
-            fontSize: 12,
-            fontStyle: 'bold',
-            fill: '#2f3542'
+        const title = new Konva.Text({
+            x: 10, y: 10,
+            text: `DC 24V可调直流电源`,
+            fontSize: 10,
+            fontStyle: 'bold'
         });
-        const titleRight = new Konva.Text({
-            x: 185, y: 20,
+        const school = new Konva.Text({
+            x: this.width - 60, y: 10,
             text: '江苏航院',
-            fontSize: 12,
-            fill: '#2f3542'
+            fontSize: 10
         });
-        this.group.add(titleLeft, titleRight);
+        this.group.add(title, school);
     }
     // 3. 液晶显示屏
     _drawLCD() {
+        // 液晶屏高度固定，宽度随设备调整
+        const lcdHeight = 40;
         const lcdBg = new Konva.Rect({
-            x: 20, y: 50,
-            width: 220, height: 80,
-            fill: '#1a1a1a',
-            cornerRadius: 5,
-            stroke: '#747d8c',
-            strokeWidth: 2
+            x: 10, y: 40,
+            width: this.width - 20,
+            height: lcdHeight,
+            fill: '#000',
+            cornerRadius: 3
         });
 
         this.voltageText = new Konva.Text({
-            x: 20, y: 70,
-            width: 220,
+            x: 10, y: 48,
+            width: this.width - 20,
             text: 'OFF',
-            fontSize: 40,
-            fontFamily: 'Courier New',
-            fill: '#2ed573', // 经典绿色
-            align: 'center',
-            fontStyle: 'bold'
+            fontSize: 24,
+            fontFamily: 'monospace',
+            fill: '#00ff00',
+            align: 'center'
         });
 
-        const unitText = new Konva.Text({
-            x: 190, y: 105,
-            text: 'V DC',
-            fontSize: 14,
-            fill: '#2ed573'
-        });
-
-        this.group.add(lcdBg, this.voltageText, unitText);
+        this.group.add(lcdBg, this.voltageText);
     }
 
     // 4. 控制面板（开关、旋钮、指示灯）
     _drawControls() {
-        // --- 电源开关 ---
-        this.powerBtn = new Konva.Rect({
-            x: 35, y: 160,
-            width: 40, height: 50,
-            fill: '#ff4757',
-            stroke: '#333',
-            cornerRadius: 3,
-            cursor: 'pointer'
+        const ctrlY = 100; // 控制区起始高度
+
+        // --- 凹陷式电源键 ---
+        this.powerBtnGroup = new Konva.Group({ x: 30, y: ctrlY });
+
+        this.powerBtnBase = new Konva.Rect({
+            width: 30, height: 30,
+            fill: '#bdc3c7',
+            stroke: '#7f8c8d',
+            strokeWidth: 1,
+            shadowColor: '#000',
+            shadowBlur: 5,
+            shadowOffset: { x: 2, y: 2 },
+            cornerRadius: 2
         });
 
-        this.powerBtn.on('click tap', () => {
+        const btnText = new Konva.Text({
+            x: -5, y: 35,
+            text: '电源键',
+            fontSize: 10,
+            fill: '#34495e'
+        });
+
+        this.powerBtnGroup.add(this.powerBtnBase, btnText);
+        this.powerBtnGroup.on('mousedown touchstart', () => {
             this.isOn = !this.isOn;
+            this._updateBtnStyle();
             this.update();
         });
 
-        // --- 电压调节旋钮 ---
-        this.knob = new Konva.Group({ x: 130, y: 185, cursor: 'pointer' });
-        const knobCircle = new Konva.Circle({
-            radius: 25,
-            fill: 'radial-gradient(startRadius: 0, endRadius: 25, colorStops: [0, "#ced6e0", 1, "#747d8c"])',
-            stroke: '#2f3542'
+        // --- 带刻度的旋钮 ---
+        const knobX = this.width - 60;
+        const knobY = ctrlY + 20;
+        this.knobGroup = new Konva.Group({ x: knobX, y: knobY });
+
+        // 绘制刻度线和数字
+        const scaleValues = [0, 4, 8, 12, 16, 20, 24];
+        scaleValues.forEach(v => {
+            // 映射 0-24V 到旋钮的角度（-150° 到 150°）
+            const angle = (v / 24) * 300 - 150;
+            const rad = (angle - 90) * Math.PI / 180;
+            const r = 28; // 刻度半径
+
+            const txt = new Konva.Text({
+                x: r * Math.cos(rad) - 10,
+                y: r * Math.sin(rad) - 5,
+                text: v.toString(),
+                fontSize: 9,
+                width: 20,
+                align: 'center',
+                fill: '#7f8c8d'
+            });
+            this.knobGroup.add(txt);
         });
+
+        const knobCircle = new Konva.Circle({
+            radius: 18,
+            fill: '#95a5a6',
+            stroke: '#34495e',
+            cursor: 'pointer'
+        });
+
         this.knobPointer = new Konva.Line({
-            points: [0, 0, 0, -20],
-            stroke: '#ff4757',
-            strokeWidth: 3,
+            points: [0, 0, 0, -15],
+            stroke: '#e74c3c',
+            strokeWidth: 2,
             lineCap: 'round'
         });
-        this.knob.add(knobCircle, this.knobPointer);
 
-        // 旋钮交互逻辑：简单的拖拽旋转模拟电压
-        this.knob.on('mousedown touchstart', (e) => {
-            e.cancelBubble = true; // 禁止拖动整个设备
+        this.knobGroup.add(knobCircle, this.knobPointer);
+
+        // 旋钮逻辑
+        knobCircle.on('mousedown touchstart', (e) => {
+            e.cancelBubble = true;
             const startY = e.evt.clientY || e.evt.touches[0].clientY;
-            const startVolt = this.voltage;
-
-            const onMove = (moveEvent) => {
-                const currentY = moveEvent.clientY || (moveEvent.touches ? moveEvent.touches[0].clientY : moveEvent.clientY);
-                const diff = (startY - currentY) * 0.2; // 灵敏度
-                this.voltage = Math.max(0, Math.min(this.maxVoltage, startVolt + diff));
+            const startV = this.voltage;
+            const onMove = (me) => {
+                const cy = me.clientY || (me.touches ? me.touches[0].clientY : me.clientY);
+                this.voltage = Math.max(0, Math.min(24, startV + (startY - cy) * 0.1));
                 this.update();
             };
-
             const onUp = () => {
                 window.removeEventListener('mousemove', onMove);
                 window.removeEventListener('mouseup', onUp);
@@ -153,29 +182,22 @@ export class DCPower {
             window.addEventListener('mouseup', onUp);
         });
 
-        // --- 指示灯 ---
-        this.led = new Konva.Circle({
-            x: 210, y: 185,
-            radius: 8,
-            fill: '#2f3542',
-            stroke: '#333'
-        });
-
-        this.group.add(this.powerBtn, this.knob, this.led);
+        this.group.add(this.powerBtnGroup, this.knobGroup);
     }
 
     // 5. 接线柱（关键：集成手动连线属性）
     _drawTerminals() {
+        const termY = this.height; // 对齐底边线
         const terminalData = [
-            { label: 'p', color: '#ff4757', x: 80 }, // 红
-            { label: 'n', color: '#2f3542', x: 180 } // 黑
+            { label: 'p', color: '#ff4757', x: this.width * 0.7 }, // 红
+            { label: 'n', color: '#2f3542', x: this.width * 0.3 } // 黑
         ];
 
         terminalData.forEach(data => {
             const term = new Konva.Circle({
-                x: data.x,
-                y: 270,
-                radius: 12,
+                x: terminalData.x,
+                y: termY,
+                radius: 8,
                 fill: data.color,
                 stroke: '#333',
                 strokeWidth: 2,
@@ -198,21 +220,35 @@ export class DCPower {
         });
     }
 
+    // 更新电源键样式
+    _updateBtnStyle() {
+        if (this.isOn) {
+            // 压下效果：阴影消失，位置微移
+            this.powerBtnBase.setAttrs({
+                shadowBlur: 0,
+                shadowOffset: { x: 0, y: 0 },
+                x: 1, y: 1,
+                fill: '#bdc3c7'
+            });
+        } else {
+            // 凸起效果
+            this.powerBtnBase.setAttrs({
+                shadowBlur: 5,
+                shadowOffset: { x: 2, y: 2 },
+                x: 0, y: 0,
+                fill: '#bdc3c7'
+            });
+        }
+    }
     // 更新显示逻辑
     update() {
         if (!this.isOn) {
             this.voltageText.text('OFF');
             this.voltageText.fill('#333');
-            this.led.fill('#2f3542');
-            this.powerBtn.fill('#ff4757');
-            this.knobPointer.rotation(0);
         } else {
-            this.voltageText.text(this.voltage.toFixed(1));
-            this.voltageText.fill('#2ed573');
-            this.led.fill('#ff4757'); // 开机灯亮
-            this.powerBtn.fill('#2ed573');
-            // 旋钮角度同步：电压 0-24 对应旋转 -150到150度
-            const angle = (this.voltage / this.maxVoltage) * 300 - 150;
+            this.voltageText.text(this.voltage.toFixed(1) + ' V');
+            this.voltageText.fill('#00ff00');
+            const angle = (this.voltage / 24) * 300 - 150;
             this.knobPointer.rotation(angle);
         }
         this.layer.batchDraw();

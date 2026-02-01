@@ -41,16 +41,16 @@ body {
     flex-direction: column;
 }
 
-#clsSel{
+#clsSel {
     height: 30px;
-    padding: 5px,5px;
+    padding: 5px, 5px;
     font-size: 16px;
 }
 
-.list-title{
-    padding: 5px,5px;
+.list-title {
+    padding: 5px, 5px;
     font-weight: bold;
-    color:var(--primary);
+    color: var(--primary);
 }
 
 /*flex: 1--占据父容器中除固定宽度元素外的所有剩余空间，flex-direction: column子元素纵向排列，默认是水平排列*/
@@ -80,7 +80,8 @@ body {
     width: 100%;
     min-height: 0;
     /* 极其重要：防止 flex 容器高度塌陷 */
-    background: var(--bg);
+    background-image: radial-gradient(rgba(0, 0, 0, .15) 1px, transparent 1px);
+    background-size: 60px 60px;
     position: relative;
 }
 
