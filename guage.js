@@ -24,7 +24,7 @@ export class Gauge {
 
         // 保存名称，避免直接访问 Konva 节点属性不可靠
         this.title = options.name ?? '';
-
+        this.type = options.type || 'aGauge'; // 仪表类型，默认电流表 'aGauge'，可选气压表 'pGauge'
         this.layer.add(this.group);
 
         // 顺序非常关键（从底到顶）
@@ -54,7 +54,7 @@ export class Gauge {
     /* ===============================
        仪表外框
     =============================== */
-    _drawShell(){
+    _drawShell() {
         this.group.add(
             new Konva.Circle({
                 x: 0,
@@ -71,7 +71,7 @@ export class Gauge {
             })
         );
     }
-    
+
 
     /* ===============================
        安全区（绿 / 黄 / 红）
@@ -106,8 +106,8 @@ export class Gauge {
        刻度（完全按数值生成）
     =============================== */
     _drawTicks() {
-        const majorStep = (this.max-this.min)/10;   // 主刻度：10
-        const minorStep = (this.max-this.min)/20;    // 副刻度：5（船舶常见）
+        const majorStep = (this.max - this.min) / 10;   // 主刻度：10
+        const minorStep = (this.max - this.min) / 20;    // 副刻度：5（船舶常见）
 
         for (let v = this.min; v <= this.max + 0.0001; v += minorStep) {
 
@@ -234,7 +234,7 @@ export class Gauge {
     }
     /* ===============================
        在轴心上方显示仪表名称，this.group.name 属性
-    =============================== */ 
+    =============================== */
     _drawname() {
         const w = 140;
         const h = 20;
@@ -263,38 +263,69 @@ export class Gauge {
 
         this.group.add(this.nameText);
     }
-   /* ===============================
-       在表壳正下方左右添加两个端子（相隔60度），用于连线
-    =============================== */
+    /* ===============================
+        在表壳正下方左右添加两个端子（相隔60度），用于连线
+     =============================== */
     _drawTerminals() {
-        // 以垂直正下（-90°）为中心，左右各偏 30° -> -120° 与 -60°
-        const angles = [-150, 150];
+        // 以垂直正下（180°）为中心，左右各偏 30° -> -150° 与 150°
+
         const r = this.radius + 10; // 放在表盘外一点
         this.terminals = [];
-        angles.forEach((deg, idx) => {
-            const rad = Konva.getAngle(deg - 90); // 与刻度计算保持一致的角度转换
+
+        if (this.type === 'aGauge') {
+            /** --- 电流表：在左右两侧创建两个圆形电气端子 --- **/
+            const angles = [-150, 150];
+            angles.forEach((deg, idx) => {
+                const rad = Konva.getAngle(deg - 90); // 与刻度计算保持一致的角度转换
+                const x = r * Math.cos(rad);
+                const y = r * Math.sin(rad);
+                const id = `${this.group.id()}_term_${idx === 0 ? 'p' : 'n'}`;
+                const fill = idx === 0 ? '#ff4757' : '#2f3542';
+                const term = new Konva.Circle({
+                    x, y,
+                    radius: 8,
+                    fill,
+                    stroke: '#333',
+                    id
+                });
+                term.strokeWidth(2);
+                term.stroke('#333');
+                term.setAttr('type', 'wire');
+                term.setAttr('termId', id);
+                term.on('mousedown touchstart', (e) => {
+                    e.cancelBubble = true;
+                    this.onTerminalClick(term);
+                });
+                this.group.add(term);
+                this.terminals.push(term);
+            });
+        } else if (this.type === 'pGauge' ) {
+            /** --- 气压表：在正下方（180°）创建一个矩形管路端子 --- **/
+            const rad = Konva.getAngle(90);; // 正下方
             const x = r * Math.cos(rad);
             const y = r * Math.sin(rad);
-            const id = `${this.group.id() || this.title}_term_${idx === 0 ? 'p' : 'n'}`;
-            const fill = idx === 0 ? '#ff4757' : '#2f3542';
-            const term = new Konva.Circle({
-                x, y,
-                radius: 8,
-                fill,
-                stroke: '#333',
+            const id = `${this.group.id()}_pipe_i`;
+            const fill = '#2f2b2c66'; // 灰色，代表金属管路接口;
+            const term = new Konva.Rect({
+                x: x - 8, // 居中修正（矩形起点在左上角）
+                y: y - 5,
+                width: 18,
+                height: 16,
+                fill: '#95a5a6', // 工业灰色，代表金属管路接口
+                cornerRadius: 2,
                 id
             });
+
             term.strokeWidth(2);
             term.stroke('#333');
-            term.setAttr('type', 'wire');
+            term.setAttr('type', 'pipe');
             term.setAttr('termId', id);
-            term.on('mousedown touchstart', (e) => {
-                e.cancelBubble = true;
-                if (typeof this.onTerminalClick === 'function') this.onTerminalClick(term);
-            });
+
             this.group.add(term);
             this.terminals.push(term);
-        });
+        }
+
+
     }
 
     /* ===============================
@@ -341,5 +372,5 @@ export class Gauge {
     getValue() {
         return this.value;
     }
- 
+
 }

@@ -24,13 +24,13 @@ export class SimulationEngine {
 
     init() {
         // 创建船舶柴油机冷却水系统组件
-/*         this.createComp('Diesel', 50, 80, '#e67e22', '柴油机');
-        // 功能控制组
-        this.createActionBtn('Pipe', 220, 80, '#27ae60', '自动连管'); */
+        /*         this.createComp('Diesel', 50, 80, '#e67e22', '柴油机');
+                // 功能控制组
+                this.createActionBtn('Pipe', 220, 80, '#27ae60', '自动连管'); */
 
 
-        const gauge = new Gauge({
-            layer:this.layer,
+        const aGauge = new Gauge({
+            layer: this.layer,
             id: 'gaugeCurrent',
             name: '电流表mA',
             x: 180,
@@ -39,9 +39,23 @@ export class SimulationEngine {
             max: 20,
             value: 12.6,
             radius: 80,
-            type:'aGauge',
+            type: 'aGauge',
             onTerminalClick: this.onTermClick.bind(this)
         })
+
+         const pGauge = new Gauge({
+            layer: this.layer,
+            id: 'gaugePressure',
+            name: '压力表MPa',
+            x: 280,
+            y: 400,
+            min: 0,
+            max: 0.8,
+            value: 0.3,
+            radius: 80,
+            type: 'pGauge',
+            onTerminalClick: this.onTermClick.bind(this)
+        })       
 
         this.layer.draw();
         window.addEventListener('resize', () => this.fit());
@@ -82,40 +96,40 @@ export class SimulationEngine {
         this.layer.draw();
     }
     /*每一个功能设备都是一个group，典型包括外壳、小组件、文字等，name属性用.查找，代表一类设备或一类属性，id属性用#查找，代表独一无二节点 */
-/*     createComp(id, x, y, color, label) {
-        const group = new Konva.Group({ x, y, id, name: 'device' ,draggable: true });
-        group.add(new Konva.Rect({ width: 150, height: 90, fill: color, stroke: '#fff', cornerRadius: 5 }));
-        /*listening: false,不参与点击事件，Canvas不会进行命中检测 
-        group.add(new Konva.Text({ text: label, x: 10, y: 35, fill: '#fff', fontStyle: 'bold', listening: false }));
-        const light = new Konva.Circle({ x: 135, y: 15, radius: 6, fill: 'red', name: 'status' });
-        group.add(light);
-        //为组件定义点击处理函数，首先功能设备主要是启停，设置work属性，OFF表示停止，ON表示正在工作，点击后状态取反，存入newState,调用状态更新函数和用户定义的函数。状态更新函数是改变设备本身的显示状态。
-        // 使用自定义点击检测
-        group.on('click tap', (e) => {
-            if (this.isLocked) return;
-            // 阻止冒泡，防止多重触发
-            e.cancelBubble = true;
-            const newState = group.getAttr('work') === 'ON' ? 'OFF' : 'ON';
-            this.updateState(id, newState);
-            this.onAction(id, newState);
-        });
-        this.layer.add(group);
-        //有了以下指令，根据仿真系统对象，可根据id访问所有的设备group 
-        this.devices[id] = group;
-    } */
+    /*     createComp(id, x, y, color, label) {
+            const group = new Konva.Group({ x, y, id, name: 'device' ,draggable: true });
+            group.add(new Konva.Rect({ width: 150, height: 90, fill: color, stroke: '#fff', cornerRadius: 5 }));
+            /*listening: false,不参与点击事件，Canvas不会进行命中检测 
+            group.add(new Konva.Text({ text: label, x: 10, y: 35, fill: '#fff', fontStyle: 'bold', listening: false }));
+            const light = new Konva.Circle({ x: 135, y: 15, radius: 6, fill: 'red', name: 'status' });
+            group.add(light);
+            //为组件定义点击处理函数，首先功能设备主要是启停，设置work属性，OFF表示停止，ON表示正在工作，点击后状态取反，存入newState,调用状态更新函数和用户定义的函数。状态更新函数是改变设备本身的显示状态。
+            // 使用自定义点击检测
+            group.on('click tap', (e) => {
+                if (this.isLocked) return;
+                // 阻止冒泡，防止多重触发
+                e.cancelBubble = true;
+                const newState = group.getAttr('work') === 'ON' ? 'OFF' : 'ON';
+                this.updateState(id, newState);
+                this.onAction(id, newState);
+            });
+            this.layer.add(group);
+            //有了以下指令，根据仿真系统对象，可根据id访问所有的设备group 
+            this.devices[id] = group;
+        } */
 
-/*     createActionBtn(id, x, y, color, label) {
-        //这些是功能按键，不是设备，没有device的name属性 
-        const btn = new Konva.Group({ x, y, id ,draggable: true });
-        btn.add(new Konva.Rect({ width: 130, height: 40, fill: color, cornerRadius: 20 }));
-        btn.add(new Konva.Text({ text: label, x: 35, y: 14, fill: '#fff', listening: false }));
-        btn.on('click tap', () => {
-            if (this.isLocked) return;
-            //告诉main.js这个功能按键被点击了，完全交给外面处理 
-            this.onAction(id, 'TRIGGER');
-        });
-        this.layer.add(btn);
-    } */
+    /*     createActionBtn(id, x, y, color, label) {
+            //这些是功能按键，不是设备，没有device的name属性 
+            const btn = new Konva.Group({ x, y, id ,draggable: true });
+            btn.add(new Konva.Rect({ width: 130, height: 40, fill: color, cornerRadius: 20 }));
+            btn.add(new Konva.Text({ text: label, x: 35, y: 14, fill: '#fff', listening: false }));
+            btn.on('click tap', () => {
+                if (this.isLocked) return;
+                //告诉main.js这个功能按键被点击了，完全交给外面处理 
+                this.onAction(id, 'TRIGGER');
+            });
+            this.layer.add(btn);
+        } */
 
     updateState(id, state) {
         const node = this.stage.findOne('#' + id);
@@ -128,9 +142,9 @@ export class SimulationEngine {
         this.layer.batchDraw();
     }
 
-    fit() {
-        const container = this.container;
-        this.stage.width(container.offsetWidth);
-        this.stage.height(container.offsetHeight);
-    }
+    /*     fit() {
+            const container = this.container;
+            this.stage.width(container.offsetWidth);
+            this.stage.height(container.offsetHeight);
+        } */
 }
