@@ -184,10 +184,3 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 });
 
-
-// 监听窗口尺寸变化，当用户旋转手机时，强制画布重新适配
-/* window.addEventListener('resize', () => {
-    if (window.engine) {
-        window.engine.fit();
-    }
-}); */

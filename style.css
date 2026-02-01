@@ -80,6 +80,7 @@ body {
     width: 100%;
     min-height: 0;
     /* 极其重要：防止 flex 容器高度塌陷 */
+    background: #f6f8f9;
     background-image: radial-gradient(rgba(0, 0, 0, .15) 1px, transparent 1px);
     background-size: 60px 60px;
     position: relative;

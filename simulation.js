@@ -11,8 +11,10 @@ export class SimulationEngine {
             width: this.container.offsetWidth,
             height: this.container.offsetHeight
         });
-        this.layer = new Konva.Layer();
+        this.devLayer = new Konva.Layer();
         this.stage.add(this.layer);
+        this.lineLayer = new Konva.Layer();
+        this.stage.add(this.lineLayer);
         /*这是设备操作的主处理逻辑函数，由main.js定义*/
         this.onAction = onAction;
         this.isLocked = false;
@@ -27,7 +29,7 @@ export class SimulationEngine {
     init() {
 
         const aGauge = new Gauge({
-            layer: this.layer,
+            layer: this.devLayer,
             id: 'gaugeCurrent',
             name: '电流表mA',
             x: 180,
@@ -41,7 +43,7 @@ export class SimulationEngine {
         })
 
         const pGauge = new Gauge({
-            layer: this.layer,
+            layer: this.devLayer,
             id: 'gaugePressure',
             name: '压力表bar',
             x: 280,
@@ -55,7 +57,7 @@ export class SimulationEngine {
         })
 
         const myPower = new DCPower({
-            layer: this.layer,
+            layer: this.devLayer,
             id: 'dcPower',
             name: '直流电源24V',
             x: 50,
