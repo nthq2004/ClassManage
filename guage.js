@@ -114,7 +114,7 @@ export class Gauge {
             const angle = this.valueToAngle(v);
             const rad = Konva.getAngle(angle - 90);
 
-            const isMajor = (v % majorStep < 0.001);
+            const isMajor = (v % majorStep === 0);
             const len = isMajor ? 16 : 8;
 
             // 刻度线
