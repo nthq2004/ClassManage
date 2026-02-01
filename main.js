@@ -90,6 +90,7 @@ window.doLogin = () => {
 //教师切换班级时调用，存储本次进入的班级，下次默认进入，在新机器上登录时，教师进入默认班级。调用https://api.wangaijun.clikc/?role=""?info="",教师进入新班级的房间会话。系统广播该房间的用户列表信息，教师重新显示新进入班级的在线用户列表。。。。。。。。。。。。。。。。。。。。。
 window.onClassChange = (cls) => {
     myInfo.className = cls;
+    document.getElementById('u-class').innerText = myInfo.className;
     localStorage.setItem('marine_sim_v3', JSON.stringify({ role: myRole, info: myInfo }));
     window.network.connect(myRole, myInfo);
 };
