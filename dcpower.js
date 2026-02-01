@@ -10,7 +10,7 @@ export class DCPower {
         this.y = config.y || 100;
         // 动态尺寸：最小宽120，高140,最大宽240，高220，默认120x100
         this.width = Math.max(140, Math.min(config.width || 140, 200));
-        this.height = Math.max(160, Math.min(config.height || 160, 220));
+        this.height = Math.max(130, Math.min(config.height || 130, 190));
         // 状态变量
         this.isOn = true;
         this.voltage = 24;
@@ -128,7 +128,7 @@ export class DCPower {
         });
 
         // --- 带刻度的旋钮 ---
-        const knobX = this.width - 40;
+        const knobX = this.width - 50;
         const knobY = ctrlY + 10;
         this.knobGroup = new Konva.Group({ x: knobX, y: knobY });
 
@@ -138,7 +138,7 @@ export class DCPower {
             // 映射 0-24V 到旋钮的角度（-150° 到 150°）
             const angle = (v / 24) * 300 - 150;
             const rad = (angle - 90) * Math.PI / 180;
-            const r = 26; // 刻度半径
+            const r = 32; // 刻度半径
 
             const txt = new Konva.Text({
                 x: r * Math.cos(rad) - 10,
@@ -154,14 +154,14 @@ export class DCPower {
         });
 
         const knobCircle = new Konva.Circle({
-            radius: 20,
+            radius: 26,
             fill: '#e3e8e9',
             stroke: '#34495e',
             cursor: 'hand'
         });
 
         this.knobPointer = new Konva.Line({
-            points: [0, 0, 0, -18],
+            points: [0, 0, 0, -24],
             stroke: '#e74c3c',
             strokeWidth: 2,
             lineCap: 'round'
