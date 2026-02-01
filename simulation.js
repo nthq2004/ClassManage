@@ -38,7 +38,7 @@ export class SimulationEngine {
             min: 0,
             max: 20,
             value: 10.6,
-            radius: 120,
+            radius: 90,
             type: 'aGauge',
             onTerminalClick: this.onTermClick.bind(this)
         })
@@ -52,7 +52,7 @@ export class SimulationEngine {
             min: 0,
             max: 2,
             value: 1,
-            radius: 70,
+            radius: 80,
             type: 'pGauge',
             onTerminalClick: this.onTermClick.bind(this)
         })       

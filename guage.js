@@ -309,9 +309,9 @@ export class Gauge {
             const id = `${this.group.id()}_pipe_i`;
             const fill = '#2f2b2c66'; // 灰色，代表金属管路接口;
             const term = new Konva.Rect({
-                x: x - 8, // 居中修正（矩形起点在左上角）
+                x: x - 10, // 居中修正（矩形起点在左上角）
                 y: y - 5,
-                width: 18,
+                width: 22,
                 height: 16,
                 fill: '#95a5a6', // 工业灰色，代表金属管路接口
                 cornerRadius: 2,
