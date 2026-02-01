@@ -290,7 +290,7 @@ export class Gauge {
                 });
                 term.strokeWidth(2);
                 term.stroke('#333');
-                term.setAttr('type', 'wire');
+                term.setAttr('connType', 'wire');
                 term.setAttr('termId', id);
                 term.on('mousedown touchstart', (e) => {
                     e.cancelBubble = true;
@@ -317,7 +317,7 @@ export class Gauge {
             });
             term.strokeWidth(2);
             term.stroke('#333');
-            term.setAttr('type', 'pipe');
+            term.setAttr('connType', 'pipe');
             term.setAttr('termId', id);
             term.on('mousedown touchstart', (e) => {
                 e.cancelBubble = true;

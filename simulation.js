@@ -37,8 +37,8 @@ export class SimulationEngine {
             y: 400,
             min: 0,
             max: 20,
-            value: 12.6,
-            radius: 80,
+            value: 10.6,
+            radius: 90,
             type: 'aGauge',
             onTerminalClick: this.onTermClick.bind(this)
         })
@@ -46,19 +46,18 @@ export class SimulationEngine {
          const pGauge = new Gauge({
             layer: this.layer,
             id: 'gaugePressure',
-            name: '压力表MPa',
+            name: '压力表bar',
             x: 280,
             y: 400,
             min: 0,
-            max: 0.2,
-            value: 0.1,
-            radius: 80,
+            max: 2,
+            value: 1,
+            radius: 90,
             type: 'pGauge',
             onTerminalClick: this.onTermClick.bind(this)
         })       
 
         this.layer.draw();
-        window.addEventListener('resize', () => this.fit());
     }
 
     onTermClick(termShape) {
@@ -80,11 +79,11 @@ export class SimulationEngine {
             return;
         }
         // 不同端子，若类型相同则建立连接
-        if (this.selectedTerminal.getAttr('type') === termShape.getAttr('type')) {
+        if (this.selectedTerminal.getAttr('connType') === termShape.getAttr('connType')) {
             this.conns.push({
                 from: this.selectedTerminal.getAttr('termId'),
                 to: termShape.getAttr('termId'),
-                type: termShape.getAttr('type')
+                type: termShape.getAttr('connType')
             });
             // 外部可通过 onAction 处理新连线事件（可选）
             this.onAction('conn', this.conns);
