@@ -66,7 +66,7 @@ export class SimulationEngine {
             onTerminalClick: this.onTermClick.bind(this)
         })
 
-        this.layer.draw();
+        this.devLayer.draw();
     }
 
     onTermClick(termShape) {
@@ -101,7 +101,7 @@ export class SimulationEngine {
         this.selectedTerminal.stroke('#333');
         this.selectedTerminal.strokeWidth(2);
         this.selectedTerminal = null;
-        this.layer.draw();
+        this.devLayer.draw();
     }
     /*每一个功能设备都是一个group，典型包括外壳、小组件、文字等，name属性用.查找，代表一类设备或一类属性，id属性用#查找，代表独一无二节点 */
     /*     createComp(id, x, y, color, label) {
@@ -137,6 +137,6 @@ export class SimulationEngine {
         /*设备都有name属性为status的状态灯 */
         const light = node.findOne('.status');
         if (light) light.fill(state === 'ON' ? '#2ecc71' : 'red');
-        this.layer.batchDraw();
+        this.devLayer.batchDraw();
     }
 }
