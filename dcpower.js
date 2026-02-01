@@ -13,7 +13,7 @@ export class DCPower {
         this.height = Math.max(135, Math.min(config.height || 135, 145));
         // 状态变量
         this.isOn = true;
-        this.voltage = 24;
+        this.voltage = config.voltage || 24; // 默认24V
         this.maxVoltage = 24;
         this.terminals = []; // 存储接线柱对象
 

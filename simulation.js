@@ -35,7 +35,7 @@ export class SimulationEngine {
             min: 0,
             max: 20,
             value: 10.6,
-            radius: 90,
+            radius: 70,
             type: 'aGauge',
             onTerminalClick: this.onTermClick.bind(this)
         })
@@ -48,8 +48,8 @@ export class SimulationEngine {
             y: 400,
             min: 0,
             max: 2,
-            value: 1,
-            radius: 80,
+            value: 3.6,
+            radius: 70,
             type: 'pGauge',
             onTerminalClick: this.onTermClick.bind(this)
         })
@@ -60,7 +60,6 @@ export class SimulationEngine {
             name: '直流电源24V',
             x: 50,
             y: 50,
-
             voltage: 24,
             onTerminalClick: this.onTermClick.bind(this)
         })
