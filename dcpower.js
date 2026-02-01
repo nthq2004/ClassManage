@@ -12,7 +12,7 @@ export class DCPower {
         this.width = Math.max(120, Math.min(config.width ||120, 160));
         this.height = Math.max(140, Math.min(config.height||140, 180));
         // 状态变量
-        this.isOn = false;
+        this.isOn = true;
         this.voltage = 24;
         this.maxVoltage = 24;
         this.terminals = []; // 存储接线柱对象
@@ -71,7 +71,7 @@ export class DCPower {
         // 液晶屏高度固定，宽度随设备调整
         const lcdHeight = 30;
         const lcdBg = new Konva.Rect({
-            x: 10, y: 20,
+            x: 10, y: 18,
             width: this.width - 20,
             height: lcdHeight,
             fill: '#000',
@@ -79,7 +79,7 @@ export class DCPower {
         });
 
         this.voltageText = new Konva.Text({
-            x: 10, y: 24,
+            x: 10, y: 22,
             width: this.width - 20,
             text: 'OFF',
             fontSize: 22,
@@ -93,10 +93,10 @@ export class DCPower {
 
     // 4. 控制面板（开关、旋钮、指示灯）
     _drawControls() {
-        const ctrlY = 56; // 控制区起始高度
+        const ctrlY = 76; // 控制区起始高度
 
         // --- 凹陷式电源键 ---
-        this.powerBtnGroup = new Konva.Group({ x: 20, y: ctrlY });
+        this.powerBtnGroup = new Konva.Group({ x: 16, y: ctrlY });
 
         this.powerBtnBase = new Konva.Rect({
             width: 30, height: 20,
@@ -110,7 +110,7 @@ export class DCPower {
         });
 
         const btnText = new Konva.Text({
-            x: -5, y: 25,
+            x: 0, y: 25,
             text: '电源键',
             fontSize: 10,
             fill: '#34495e'
@@ -189,8 +189,8 @@ export class DCPower {
     _drawTerminals() {
         const termY = this.height; // 对齐底边线
         const terminalData = [
-            { label: 'p', color: '#ff4757', x: this.width * 0.7 }, // 红
-            { label: 'n', color: '#2f3542', x: this.width * 0.3 } // 黑
+            { label: 'p', color: '#ff4757', x: this.width * 0.3 }, // 红
+            { label: 'n', color: '#2f3542', x: this.width * 0.7 } // 黑
         ];
 
         terminalData.forEach(data => {
