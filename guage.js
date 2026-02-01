@@ -106,15 +106,17 @@ export class Gauge {
        刻度（完全按数值生成）
     =============================== */
     _drawTicks() {
-        const majorStep = (this.max - this.min) / 10;   // 主刻度：10，0.1
-        const minorStep = (this.max - this.min) / 20;    // 副刻度：5,0.05（船舶常见）
+        const majorCount = 10; // 总共分10个大格
+        const totalSteps = 20; // 总共20个小格（minorStep）
+        const range = this.max - this.min;
 
-        for (let v = this.min; v <= this.max + 0.0001; v += minorStep) {
-
+        for (let i = 0; i <= totalSteps; i++) {
+            // 通过索引计算当前数值，而不是累加
+            const v = this.min + (range * i / totalSteps);
             const angle = this.valueToAngle(v);
             const rad = Konva.getAngle(angle - 90);
 
-            const isMajor = (v % majorStep === 0);
+            const isMajor = i % (totalSteps / majorCount) === 0;
             const len = isMajor ? 16 : 8;
 
             // 刻度线
