@@ -71,8 +71,8 @@ export class PressureTransmitter {
         });
 
         // 3. 底部金属丝扣接口
-        const stem = new Konva.Rect({ x: centerX - 10, y: 140, width: 20, height: 30, fill: '#ced6e0', stroke: '#747d8c' });
-        const bolt = new Konva.Rect({ x: centerX - 15, y: 170, width: 30, height: 15, fill: '#747d8c', cornerRadius: 2 });
+        const stem = new Konva.Rect({ x: centerX - 10, y: 140, width: 20, height: 20, fill: '#ced6e0', stroke: '#747d8c' });
+        const bolt = new Konva.Rect({ x: centerX - 15, y: 160, width: 30, height: 15, fill: '#747d8c', cornerRadius: 2 });
 
         this.group.add(tBar, leftCap, rightCap, outerCover, greenCover, stem, bolt);
         this.lcdCenterY = 85;
@@ -118,10 +118,10 @@ export class PressureTransmitter {
 
         knobConfigs.forEach(k => {
             const knobGroup = new Konva.Group({ x: k.x, y: 32 });
-            const base = new Konva.Circle({ radius: 16, fill: '#dfe4ea', stroke: '#747d8c' });
+            const base = new Konva.Circle({ radius: 11, fill: '#dfe4ea', stroke: '#747d8c' });
             const rotor = new Konva.Group();
-            rotor.add(new Konva.Circle({ radius: 13, fill: '#f1f2f6', stroke: '#2f3542' }));
-            rotor.add(new Konva.Line({ points: [0, -5, 0, 5], stroke: '#2f3542', strokeWidth: 2 }));
+            rotor.add(new Konva.Circle({ radius: 8, fill: '#f1f2f6', stroke: '#2f3542' }));
+            rotor.add(new Konva.Line({ points: [0, -7, 0, 7], stroke: '#2f3542', strokeWidth: 3 }));
 
             knobGroup.add(base, rotor);
 
@@ -160,7 +160,7 @@ export class PressureTransmitter {
             { id: 'n', color: '#2f3542', y: 42 }
         ];
         wireT.forEach(p => {
-            const term = new Konva.Circle({ x: 5, y: p.y, radius: 6, fill: p.color, stroke: '#333', id: `${this.id}_wire_${p.id}` });
+            const term = new Konva.Circle({ x: 5, y: p.y, radius: 7, fill: p.color, stroke: '#333', id: `${this.id}_wire_${p.id}` });
             term.setAttrs({
                 connType: 'wire',
                 termId: term.id()
@@ -172,7 +172,7 @@ export class PressureTransmitter {
 
         // 气路端口 (底部凸出一半)
         const pipePort = new Konva.Rect({
-            x: centerX - 8, y: 185, width: 16, height: 10,
+            x: centerX - 10, y: 175, width: 20, height: 12,
             fill: '#95a5a6', stroke: '#34495e', id: `${this.id}_pipe_i`
         });
             pipePort.setAttrs({ connType: 'pipe', termId: pipePort.id() });

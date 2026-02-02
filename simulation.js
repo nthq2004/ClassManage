@@ -29,6 +29,11 @@ export class SimulationEngine {
 
     init() {
 
+        //如果有组件移动，重绘所有连线
+        this.devLayer.on('dragend', () => {
+            this.reDrawConnections();
+        });
+
         const aGauge = new Gauge({
             layer: this.devLayer,
             id: 'gaugeCurrent',
@@ -149,6 +154,8 @@ export class SimulationEngine {
         if (light) light.fill(state === 'ON' ? '#2ecc71' : 'red');
         this.devLayer.batchDraw();
     }
+
+    // 重绘所有连线
     reDrawConnections() {
         this.lineLayer.destroyChildren();// 清除现有连线
         this.conns.forEach(conn => {
@@ -160,7 +167,7 @@ export class SimulationEngine {
                 const line = new Konva.Line({  // 创建新连线
                     points: [fromPos.x, fromPos.y, toPos.x, toPos.y],  // 起点和终点坐标
                     stroke: conn.type === 'wire' ? '#e74c3c' : '#3498db', // 根据类型设置颜色
-                    strokeWidth: 4, // 线宽
+                    strokeWidth: conn.type === 'wire'?4:8, // 线宽
                     lineCap: conn.type === 'wire'?'round':'square', // 根据类型设置线帽样式
                     lineJoin: 'round'  // 连接处样式
                 });
