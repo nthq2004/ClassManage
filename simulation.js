@@ -1,5 +1,6 @@
 import { Gauge } from './guage.js';
 import { DCPower } from './dcpower.js';
+import { PressureTransmitter } from './pressuretrans.js';
 
 /*对外声明的类，构造时要传入画布ID，和处理函数，所有的仿真对象都包含在这个文件 */
 export class SimulationEngine {
@@ -65,6 +66,14 @@ export class SimulationEngine {
             voltage: 24,
             onTerminalClick: this.onTermClick.bind(this)
         })
+
+        const myTrans = new PressureTransmitter({
+            layer: this.devLayer,
+            id: 'pTr',
+            name: '压力变送器',
+
+        });
+        myTrans.update(1,1.2);
 
         this.devLayer.draw();
     }
