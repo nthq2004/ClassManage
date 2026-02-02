@@ -40,30 +40,22 @@ export class PressureTransmitter {
 
     _drawEnclosure() {
         // 1. 上方横置电路仓
-        const barHeight = 45;
+        const barHeight = 70;
         this.elecBar = new Konva.Rect({
             x: 0, y: 0,
             width: this.width,
             height: barHeight,
-            fill: 'linear-gradient(startPoint: {x:0, y:0}, endPoint: {x:0, y:45}, colorStops: [0, "#95a5a6", 1, "#7f8c8d"])',
+            fill: 'linear-gradient(startPoint: {x:0, y:0}, endPoint: {x:0, y:45}, colorStops: [0, "#eaecec", 1, "#c4c7c7"])',
             stroke: '#2c3e50',
             strokeWidth: 2,
             cornerRadius: 4
         });
 
-        // 2. 中间连接颈部
-        const neck = new Konva.Rect({
-            x: this.width / 2 - 15, y: barHeight,
-            width: 30, height: 20,
-            fill: '#7f8c8d',
-            stroke: '#2c3e50'
-        });
-
-        // 3. 圆形表头主体
-        const bodyRadius = Math.min(this.width, this.height) * 0.35;
+        // 2. 圆形表头主体
+        const bodyRadius = Math.min(this.width, this.height) * 0.4;
         this.mainBody = new Konva.Circle({
             x: this.width / 2,
-            y: barHeight + 20 + bodyRadius,
+            y: barHeight + bodyRadius-20,
             radius: bodyRadius,
             fill: '#bdc3c7',
             stroke: '#7f8c8d',
@@ -72,7 +64,7 @@ export class PressureTransmitter {
             shadowOpacity: 0.2
         });
 
-        this.group.add(this.elecBar, neck, this.mainBody);
+        this.group.add(this.mainBody,this.elecBar );
         this.bodyCenterY = this.mainBody.y(); // 记录中心用于后续LCD定位
     }
 
@@ -111,8 +103,8 @@ export class PressureTransmitter {
             
             // 旋钮底座（下沉感）
             const base = new Konva.Circle({
-                radius: 14,
-                fill: '#747d8c',
+                radius: 28,
+                fill: '#d5dbe4cb',
                 stroke: '#2f3542',
                 strokeWidth: 1
             });
@@ -120,14 +112,14 @@ export class PressureTransmitter {
             // 转子（带转动指示槽）
             const rotor = new Konva.Group();
             const rotorCircle = new Konva.Circle({
-                radius: 10,
-                fill: 'radial-gradient(startRadius: 0, endRadius: 10, colorStops: [0, "#ced6e0", 1, "#a4b0be"])',
+                radius: 22,
+                fill: 'radial-gradient(startRadius: 0, endRadius: 10, colorStops: [0, "#ced6e0", 1, "#e7ecf2"])',
                 stroke: '#2f3542'
             });
             const slot = new Konva.Rect({
                 x: -1, y: -8,
                 width: 2, height: 16,
-                fill: '#2f3542',
+                fill: '#3a6a4c',
                 cornerRadius: 1
             });
             const dot = new Konva.Circle({ y: -6, radius: 1.5, fill: '#ff4757' }); // 红色指向点
@@ -161,11 +153,11 @@ export class PressureTransmitter {
                     this.update(this.inputPressure, this.isPowered);
                 };
                 const onUp = () => {
-                    window.removeEventListener('mousemove', onMove);
-                    window.removeEventListener('mouseup', onUp);
+                    window.removeEventListener('mousemove touchmove', onMove);
+                    window.removeEventListener('mouseup touchend', onUp);
                 };
-                window.addEventListener('mousemove', onMove);
-                window.addEventListener('mouseup', onUp);
+                window.addEventListener('mousemove touchmove', onMove);
+                window.addEventListener('mouseup touchend', onUp);
             });
 
             this.group.add(knobGroup);
@@ -175,14 +167,14 @@ export class PressureTransmitter {
     _drawTerminals() {
         // 1. 电气端口：左侧垂直分布
         const wirePositions = [
-            { id: 'p', color: '#ff4757', y: 12 }, // 正极
-            { id: 'n', color: '#2f3542', y: 32 }  // 负极
+            { id: 'p', color: '#ff4757', y: 20 }, // 正极
+            { id: 'n', color: '#2f3542', y: 50 }  // 负极
         ];
 
         wirePositions.forEach(pos => {
             const term = new Konva.Circle({
                 x: 0, y: pos.y,
-                radius: 7,
+                radius: 8,
                 fill: pos.color,
                 stroke: '#333',
                 strokeWidth: 2,
@@ -196,7 +188,7 @@ export class PressureTransmitter {
         // 2. 气路端口：正下方凸出一半
         const pipePort = new Konva.Rect({
             x: this.width / 2 - 8,
-            y: this.height - 6,
+            y: 0.8*this.height+50 - 6,
             width: 16, height: 12,
             fill: '#95a5a6',
             stroke: '#34495e',
