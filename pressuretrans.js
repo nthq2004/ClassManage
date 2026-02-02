@@ -6,8 +6,8 @@ export class PressureTransmitter {
         this.id = config.id || 'pt_01';
 
         // 动态尺寸设置：最小宽140, 最小高180
-        this.width = Math.max(140, Math.min(config.width || 140,200));
-        this.height = Math.max(180, Math.min(config.height || 180,240));
+        this.width = Math.max(140, Math.min(config.width || 140, 200));
+        this.height = Math.max(180, Math.min(config.height || 180, 240));
 
         // 核心参数
         this.inputPressure = 0;
@@ -15,6 +15,9 @@ export class PressureTransmitter {
         this.zeroAdj = 0;
         this.spanAdj = 1.0;
         this.isPowered = false;
+        this.terminals = [];
+
+        // 端口点击回调        
         this.onTerminalClick = config.onTerminalClick || null;
 
         this.group = new Konva.Group({
@@ -32,180 +35,140 @@ export class PressureTransmitter {
         this._drawLCD();            // 绘制显示屏
         this._drawKnobs();          // 绘制拟物旋钮
         this._drawTerminals();      // 整合后的端口绘制
-        
+
         this.layer.add(this.group);
         this.layer.draw();
         this.update(0, false);
     }
 
-    _drawEnclosure() {
-        // 1. 上方横置电路仓
-        const barHeight = 70;
-        this.elecBar = new Konva.Rect({
-            x: 0, y: 0,
-            width: this.width,
-            height: barHeight,
-            fill: 'linear-gradient(startPoint: {x:0, y:0}, endPoint: {x:0, y:45}, colorStops: [0, "#eaecec", 1, "#c4c7c7"])',
-            stroke: '#2c3e50',
-            strokeWidth: 2,
-            cornerRadius: 4
+_drawEnclosure() {
+        const centerX = this.width / 2;
+
+        // 1. 顶部 T 型横梁 (Junction Box)
+        const tBar = new Konva.Rect({
+            x: 20, y: 10,
+            width: this.width - 40, height: 45,
+            fill: '#f1f2f6', stroke: '#a4b0be', strokeWidth: 1, cornerRadius: 5
         });
 
-        // 2. 圆形表头主体
-        const bodyRadius = Math.min(this.width, this.height) * 0.4;
-        this.mainBody = new Konva.Circle({
-            x: this.width / 2,
-            y: barHeight + bodyRadius-20,
-            radius: bodyRadius,
-            fill: '#bdc3c7',
-            stroke: '#7f8c8d',
-            strokeWidth: 3,
-            shadowBlur: 10,
-            shadowOpacity: 0.2
+        // 左右金属密封盖 (模拟图片两侧的六角螺帽)
+        const leftCap = new Konva.Rect({ x: 0, y: 15, width: 20, height: 35, fill: '#ced6e0', stroke: '#747d8c', cornerRadius: 2 });
+        const rightCap = new Konva.Rect({ x: this.width - 20, y: 15, width: 20, height: 35, fill: '#ced6e0', stroke: '#747d8c', cornerRadius: 2 });
+
+        // 2. 圆形表头与防滑旋盖 (深绿色)
+        const outerRadius = 55;
+        const outerCover = new Konva.Circle({
+            x: centerX, y: 85, radius: outerRadius,
+            fill: '#2f3542', // 底色
+            stroke: '#1e272e', strokeWidth: 1
         });
 
-        this.group.add(this.mainBody,this.elecBar );
-        this.bodyCenterY = this.mainBody.y(); // 记录中心用于后续LCD定位
+        // 深绿色旋盖 (带凹槽纹理)
+        const greenCover = new Konva.Circle({
+            x: centerX, y: 85, radius: 52,
+            fill: '#27ae60', // 图片中的深绿色
+            stroke: '#1e8449', strokeWidth: 4
+        });
+
+        // 3. 底部金属丝扣接口
+        const stem = new Konva.Rect({ x: centerX - 10, y: 140, width: 20, height: 30, fill: '#ced6e0', stroke: '#747d8c' });
+        const bolt = new Konva.Rect({ x: centerX - 15, y: 170, width: 30, height: 15, fill: '#747d8c', cornerRadius: 2 });
+
+        this.group.add(tBar, leftCap, rightCap, outerCover, greenCover, stem, bolt);
+        this.lcdCenterY = 85; 
     }
 
     _drawLCD() {
-        const lcdW = 60, lcdH = 35;
-        this.lcdBg = new Konva.Rect({
-            x: this.width / 2 - lcdW / 2,
-            y: this.bodyCenterY - lcdH / 2,
-            width: lcdW, height: lcdH,
-            fill: '#000',
-            cornerRadius: 2
+        const centerX = this.width / 2;
+        const lcdRadius = 38;
+        
+        // LCD 背景 (图片中是弧形顶部的绿色屏幕)
+        this.lcdBg = new Konva.Circle({
+            x: centerX, y: this.lcdCenterY,
+            radius: lcdRadius,
+            fill: '#000' // 默认黑屏
         });
 
         this.lcdText = new Konva.Text({
-            x: this.width / 2 - lcdW / 2,
-            y: this.bodyCenterY - 7,
-            width: lcdW,
+            x: centerX - 30, y: this.lcdCenterY - 10,
+            width: 60,
             text: '',
-            fontSize: 16,
-            fontFamily: 'monospace',
+            fontSize: 18,
+            fontFamily: 'Digital-7, monospace',
             fill: '#00ff00',
-            align: 'center'
+            align: 'center',
+            fontStyle: 'bold'
         });
 
-        this.group.add(this.lcdBg, this.lcdText);
+        const unit = new Konva.Text({
+            x: centerX - 15, y: this.lcdCenterY + 12,
+            text: 'MPa', fontSize: 10, fill: '#1a1a1a', opacity: 0
+        });
+        this.unitText = unit;
+
+        this.group.add(this.lcdBg, this.lcdText, unit);
     }
 
     _drawKnobs() {
-        const knobSpecs = [
-            { id: 'zero', x: 30, label: 'ZERO' },
-            { id: 'span', x: this.width - 30, label: 'SPAN' }
+        // 旋钮放在顶部 T 型梁上，模拟隐藏盖板下的调节孔
+        const knobConfigs = [
+            { id: 'zero', x: 50, label: 'Z' },
+            { id: 'span', x: this.width - 50, label: 'S' }
         ];
 
-        knobSpecs.forEach(spec => {
-            const knobGroup = new Konva.Group({ x: spec.x, y: 22 });
-            
-            // 旋钮底座（下沉感）
-            const base = new Konva.Circle({
-                radius: 28,
-                fill: '#d5dbe4cb',
-                stroke: '#2f3542',
-                strokeWidth: 1
-            });
-
-            // 转子（带转动指示槽）
+        knobConfigs.forEach(k => {
+            const knobGroup = new Konva.Group({ x: k.x, y: 32 });
+            const base = new Konva.Circle({ radius: 10, fill: '#dfe4ea', stroke: '#747d8c' });
             const rotor = new Konva.Group();
-            const rotorCircle = new Konva.Circle({
-                radius: 22,
-                fill: 'radial-gradient(startRadius: 0, endRadius: 10, colorStops: [0, "#ced6e0", 1, "#e7ecf2"])',
-                stroke: '#2f3542'
-            });
-            const slot = new Konva.Rect({
-                x: -1, y: -8,
-                width: 2, height: 16,
-                fill: '#3a6a4c',
-                cornerRadius: 1
-            });
-            const dot = new Konva.Circle({ y: -6, radius: 1.5, fill: '#ff4757' }); // 红色指向点
-            rotor.add(rotorCircle, slot, dot);
-
-            const label = new Konva.Text({
-                x: -15, y: -25,
-                text: spec.label,
-                fontSize: 9,
-                fill: '#fff',
-                fontStyle: 'bold'
-            });
-
-            knobGroup.add(base, rotor, label);
-
-            // 增强转动感交互
+            rotor.add(new Konva.Circle({ radius: 7, fill: '#f1f2f6', stroke: '#2f3542' }));
+            rotor.add(new Konva.Line({ points: [0, -5, 0, 5], stroke: '#2f3542', strokeWidth: 2 }));
+            
+            knobGroup.add(base, rotor);
+            
             rotor.on('mousedown touchstart', (e) => {
                 e.cancelBubble = true;
                 const startY = e.evt.clientY || e.evt.touches[0].clientY;
                 const startRot = rotor.rotation();
-
                 const onMove = (me) => {
                     const cy = me.clientY || (me.touches ? me.touches[0].clientY : me.clientY);
-                    const delta = (startY - cy) * 2; // 旋转灵敏度
+                    const delta = (startY - cy) * 2;
                     rotor.rotation(startRot + delta);
-
-                    // 映射数值
-                    if (spec.id === 'zero') this.zeroAdj = (rotor.rotation() / 360) * 0.2;
+                    if (k.id === 'zero') this.zeroAdj = (rotor.rotation() / 360) * 0.2;
                     else this.spanAdj = 1.0 + (rotor.rotation() / 360) * 0.2;
-                    
                     this.update(this.inputPressure, this.isPowered);
                 };
-                const onUp = () => {
-                    window.removeEventListener('mousemove touchmove', onMove);
-                    window.removeEventListener('mouseup touchend', onUp);
-                };
+                const onUp = () => { window.removeEventListener('mousemove touchmove', onMove); window.removeEventListener('mouseup touchend', onUp); };
                 window.addEventListener('mousemove touchmove', onMove);
                 window.addEventListener('mouseup touchend', onUp);
             });
-
             this.group.add(knobGroup);
         });
     }
 
     _drawTerminals() {
-        // 1. 电气端口：左侧垂直分布
-        const wirePositions = [
-            { id: 'p', color: '#ff4757', y: 20 }, // 正极
-            { id: 'n', color: '#2f3542', y: 50 }  // 负极
+        const centerX = this.width / 2;
+        // 电路端口 (从左侧引出)
+        const wireT = [
+            { id: 'p', color: '#ff4757', y: 22 },
+            { id: 'n', color: '#2f3542', y: 42 }
         ];
-
-        wirePositions.forEach(pos => {
-            const term = new Konva.Circle({
-                x: 0, y: pos.y,
-                radius: 8,
-                fill: pos.color,
-                stroke: '#333',
-                strokeWidth: 2,
-                id: `${this.id}_term_${pos.id}`
-            });
-            term.setAttrs({ connType: 'wire', termId: term.id });
-            this._bindTermEvent(term);
+        wireT.forEach(p => {
+            const term = new Konva.Circle({ x: 5, y: p.y, radius: 6, fill: p.color, stroke: '#333', id: `${this.id}_wire_${p.id}` });
+            term.setAttrs({ connType: 'wire', termId: p.id });
+            term.on('mousedown touchstart', (e) => { e.cancelBubble = true; if(this.onTerminalClick) this.onTerminalClick(term); });
             this.group.add(term);
+            this.terminals.push(term);
         });
 
-        // 2. 气路端口：正下方凸出一半
+        // 气路端口 (底部凸出一半)
         const pipePort = new Konva.Rect({
-            x: this.width / 2 - 8,
-            y: 0.8*this.height+50 - 6,
-            width: 16, height: 12,
-            fill: '#95a5a6',
-            stroke: '#34495e',
-            strokeWidth: 2,
-            cornerRadius: 1,
-            id: `${this.id}_pipe_i`
+            x: centerX - 8, y: 185, width: 16, height: 10,
+            fill: '#95a5a6', stroke: '#34495e', id: `${this.id}_pipe_i`
         });
         pipePort.setAttrs({ connType: 'pipe' , termId: pipePort.id });
-        this._bindTermEvent(pipePort);
+        pipePort.on('mousedown touchstart', (e) => { e.cancelBubble = true; if(this.onTerminalClick) this.onTerminalClick(pipePort); });
         this.group.add(pipePort);
-    }
-
-    _bindTermEvent(obj) {
-        obj.on('mousedown touchstart', (e) => {
-            e.cancelBubble = true;
-            if (this.onTerminalClick) this.onTerminalClick(obj);
-        });
+        this.terminals.push(pipePort);
     }
 
     update(p, hasPower) {
@@ -213,13 +176,15 @@ export class PressureTransmitter {
         this.isPowered = hasPower;
 
         if (!this.isPowered) {
-            this.lcdText.text("");
-            this.lcdBg.fill('#000');
+            this.lcdBg.fill('#1a1a1a'); // 熄灭
+            this.lcdText.text('');
+            this.unitText.opacity(0);
         } else {
-            this.lcdBg.fill('#1a1a1a');
+            this.lcdBg.fill('#2ed573'); // 亮起图片中的翠绿色
             const val = (this.inputPressure + this.zeroAdj) * this.spanAdj;
-            this.lcdText.text(Math.max(0, val).toFixed(2));
-            this.lcdText.fill('#00ff00');
+            this.lcdText.text(Math.max(0, val).toFixed(3)); // 图片中是5位显示
+            this.lcdText.fill('#1a1a1a'); // 液晶黑字
+            this.unitText.opacity(1);
         }
         this.layer.batchDraw();
     }
