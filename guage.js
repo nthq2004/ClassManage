@@ -276,7 +276,7 @@ export class Gauge {
 
         if (this.type === 'aGauge') {
             /** --- 电流表：在左右两侧创建两个圆形电气端子 --- **/
-            const angles = [-150, 150];
+            const angles = [150, -150];
             angles.forEach((deg, idx) => {
                 const rad = Konva.getAngle(deg - 90); // 与刻度计算保持一致的角度转换
                 const x = r * Math.cos(rad);

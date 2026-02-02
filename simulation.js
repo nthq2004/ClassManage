@@ -36,7 +36,7 @@ export class SimulationEngine {
 
         const aGauge = new Gauge({
             layer: this.devLayer,
-            id: 'gaugeCurrent',
+            id: 'aGa',
             name: '电流表mA',
             x: 180,
             y: 400,
@@ -47,10 +47,12 @@ export class SimulationEngine {
             type: 'aGauge',
             onTerminalClick: this.onTermClick.bind(this)
         })
+        //把这个设备对象存到devices里，方便后续操作
+        this.devices['aGauge'] = aGauge;
 
         const pGauge = new Gauge({
             layer: this.devLayer,
-            id: 'gaugePressure',
+            id: 'pGa',
             name: '压力表bar',
             x: 280,
             y: 400,
@@ -61,16 +63,18 @@ export class SimulationEngine {
             type: 'pGauge',
             onTerminalClick: this.onTermClick.bind(this)
         })
+        this.devices['pGauge'] = pGauge;//把这个设备对象存到devices里，方便后续操作
 
         const myPower = new DCPower({
             layer: this.devLayer,
-            id: 'dcPower',
+            id: 'dcP',
             name: '直流电源24V',
             x: 50,
             y: 50,
             voltage: 24,
             onTerminalClick: this.onTermClick.bind(this)
         })
+        this.devices['dcPower'] = myPower;//把这个设备对象存到devices里，方便后续操作
 
         const myTrans = new PressureTransmitter({
             layer: this.devLayer,
@@ -78,7 +82,8 @@ export class SimulationEngine {
             name: '压力变送器',
             onTerminalClick: this.onTermClick.bind(this)
         });
-        myTrans.update(1, 1.2);
+        this.devices['pTr'] = myTrans;//把这个设备对象存到devices里，方便后续操作
+
 
         this.devLayer.draw();
     }
@@ -118,40 +123,28 @@ export class SimulationEngine {
         this.reDrawConnections();
         this.devLayer.draw();
     }
-    /*每一个功能设备都是一个group，典型包括外壳、小组件、文字等，name属性用.查找，代表一类设备或一类属性，id属性用#查找，代表独一无二节点 */
-    /*     createComp(id, x, y, color, label) {
-            const light = new Konva.Circle({ x: 135, y: 15, radius: 6, fill: 'red', name: 'status' });
-            //为组件定义点击处理函数，首先功能设备主要是启停，设置work属性，OFF表示停止，ON表示正在工作，点击后状态取反，存入newState,调用状态更新函数和用户定义的函数。状态更新函数是改变设备本身的显示状态。
-            // 使用自定义点击检测
-            group.on('click tap', (e) => {
-                if (this.isLocked) return;
-                // 阻止冒泡，防止多重触发
-                e.cancelBubble = true;
-                const newState = group.getAttr('work') === 'ON' ? 'OFF' : 'ON';
-                this.updateState(id, newState);
-                this.onAction(id, newState);
-            });
-            //有了以下指令，根据仿真系统对象，可根据id访问所有的设备group 
-            this.devices[id] = group;
-        } */
 
-    /*     createActionBtn(id, x, y, color, label) {
-            //这些是功能按键，不是设备，没有device的name属性 
-            btn.add(new Konva.Text({ text: label, x: 35, y: 14, fill: '#fff', listening: false }));
-            btn.on('click tap', () => {
-                if (this.isLocked) return;
-                //告诉main.js这个功能按键被点击了，完全交给外面处理 
-                this.onAction(id, 'TRIGGER');
-        } */
 
-    updateState(id, state) {
-        const node = this.stage.findOne('#' + id);
+    checkCircuit() {
+        // 在这里实现电路检查逻辑,可以遍历 this.conns 来检查连线是否正确，先过滤出所有wire类型的连线
+        const wireConns = this.conns.filter(conn => conn.type === 'wire');
+        // 从DC24V电源的正极开始，进行连接关系追踪，检查是否最终连接到了压力变送器的正极，压力变送器的负极是否连接到了电流表的正极，电流表的负极是否连接到了DC24V电源的负极。总共3个连接，如果都成立，则电路正确，如果有任何一个不成立，则电路错误。直流电源的电压必须大于等于20V，才算电路正确。fromTermId和toTermId分别是端子的ID,正反接线都要考虑。
+        const checkConn = (fromTermId, toTermId, connections) => {
+            return connections.some(conn => conn.from === fromTermId && conn.to === toTermId ||
+                conn.from === toTermId && conn.to === fromTermId);
+        }
+        return (checkConn('dcP_term_p', 'pTr_term_p', wireConns) &&
+            checkConn('pTr_term_n', 'aGa_term_p', wireConns) &&
+            checkConn('aGa_term_n', 'dcP_term_n', wireConns) &&
+            this.devices['dcPower'].getvalue() >= 20)
+
+    }
+
+    updateState(devId, state) {
+        const node = this.stage.findOne('#' + devId);
         if (!node) return;
         /*点击后，更新该设备的状态 */
-        node.setAttr('work', state);
-        /*设备都有name属性为status的状态灯 */
-        const light = node.findOne('.status');
-        if (light) light.fill(state === 'ON' ? '#2ecc71' : 'red');
+
         this.devLayer.batchDraw();
     }
 
@@ -166,9 +159,9 @@ export class SimulationEngine {
                 const toPos = toTerm.getAbsolutePosition(); // 获取端子在舞台上的绝对位置
                 const line = new Konva.Line({  // 创建新连线
                     points: [fromPos.x, fromPos.y, toPos.x, toPos.y],  // 起点和终点坐标
-                    stroke: conn.type === 'wire' ? '#e74c3c' : '#3498db', // 根据类型设置颜色
-                    strokeWidth: conn.type === 'wire'?4:8, // 线宽
-                    lineCap: conn.type === 'wire'?'round':'square', // 根据类型设置线帽样式
+                    stroke: conn.type === 'wire' ? (this.checkCircuit()?'#e74c3c':'#c9bebd') : '#3498db', // 根据类型设置颜色
+                    strokeWidth: conn.type === 'wire' ? 4 : 8, // 线宽
+                    lineCap: conn.type === 'wire' ? 'round' : 'square', // 根据类型设置线帽样式
                     lineJoin: 'round'  // 连接处样式
                 });
                 this.lineLayer.add(line); // 添加连线到连线图层
@@ -176,4 +169,10 @@ export class SimulationEngine {
         });
         this.lineLayer.draw();// 重绘连线图层
     }
+
+
+
+
+
+
 }
