@@ -15,6 +15,7 @@ export class PressureTransmitter {
         this.zeroAdj = 0;
         this.spanAdj = 1.0;
         this.isPowered = false;
+        this.onTerminalClick = config.onTerminalClick || null;
 
         this.group = new Konva.Group({
             x: this.x,
