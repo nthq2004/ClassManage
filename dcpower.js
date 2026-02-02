@@ -180,11 +180,15 @@ export class DCPower {
                 this.update();
             };
             const onUp = () => {
-                window.removeEventListener('mousemove touchmove', onMove);
-                window.removeEventListener('mouseup touchend', onUp);
+                window.removeEventListener('mousemove', onMove);
+                window.removeEventListener('touchmove', onMove);
+                window.removeEventListener('mouseup', onUp);
+                window.removeEventListener('touchend', onUp);
             };
-            window.addEventListener('mousemove touchmove', onMove);
-            window.addEventListener('mouseup touchend', onUp);
+            window.addEventListener('mousemove', onMove);
+            window.addEventListener('touchmove', onMove);
+            window.addEventListener('mouseup', onUp);
+            window.addEventListener('touchend', onUp);
         });
 
         this.group.add(this.powerBtnGroup, this.knobGroup);

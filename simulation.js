@@ -71,9 +71,9 @@ export class SimulationEngine {
             layer: this.devLayer,
             id: 'pTr',
             name: '压力变送器',
-
+            onTerminalClick: this.onTermClick.bind(this)
         });
-        myTrans.update(1,1.2);
+        myTrans.update(1, 1.2);
 
         this.devLayer.draw();
     }

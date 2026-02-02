@@ -41,7 +41,7 @@ export class PressureTransmitter {
         this.update(0, false);
     }
 
-_drawEnclosure() {
+    _drawEnclosure() {
         const centerX = this.width / 2;
 
         // 1. 顶部 T 型横梁 (Junction Box)
@@ -75,13 +75,13 @@ _drawEnclosure() {
         const bolt = new Konva.Rect({ x: centerX - 15, y: 170, width: 30, height: 15, fill: '#747d8c', cornerRadius: 2 });
 
         this.group.add(tBar, leftCap, rightCap, outerCover, greenCover, stem, bolt);
-        this.lcdCenterY = 85; 
+        this.lcdCenterY = 85;
     }
 
     _drawLCD() {
         const centerX = this.width / 2;
         const lcdRadius = 38;
-        
+
         // LCD 背景 (图片中是弧形顶部的绿色屏幕)
         this.lcdBg = new Konva.Circle({
             x: centerX, y: this.lcdCenterY,
@@ -122,9 +122,9 @@ _drawEnclosure() {
             const rotor = new Konva.Group();
             rotor.add(new Konva.Circle({ radius: 7, fill: '#f1f2f6', stroke: '#2f3542' }));
             rotor.add(new Konva.Line({ points: [0, -5, 0, 5], stroke: '#2f3542', strokeWidth: 2 }));
-            
+
             knobGroup.add(base, rotor);
-            
+
             rotor.on('mousedown touchstart', (e) => {
                 e.cancelBubble = true;
                 const startY = e.evt.clientY || e.evt.touches[0].clientY;
@@ -137,9 +137,16 @@ _drawEnclosure() {
                     else this.spanAdj = 1.0 + (rotor.rotation() / 360) * 0.2;
                     this.update(this.inputPressure, this.isPowered);
                 };
-                const onUp = () => { window.removeEventListener('mousemove touchmove', onMove); window.removeEventListener('mouseup touchend', onUp); };
-                window.addEventListener('mousemove touchmove', onMove);
-                window.addEventListener('mouseup touchend', onUp);
+                const onUp = () => {
+                    window.removeEventListener('mousemove', onMove); 
+                     window.removeEventListener('touchmove', onMove);                    
+                    window.removeEventListener('mouseup', onUp);
+                    window.removeEventListener('touchend', onUp);
+                };
+                window.addEventListener('mousemove', onMove);
+                window.addEventListener('touchmove', onMove);
+                window.addEventListener('mouseup', onUp);
+                window.addEventListener('touchend', onUp);
             });
             this.group.add(knobGroup);
         });
@@ -155,7 +162,7 @@ _drawEnclosure() {
         wireT.forEach(p => {
             const term = new Konva.Circle({ x: 5, y: p.y, radius: 6, fill: p.color, stroke: '#333', id: `${this.id}_wire_${p.id}` });
             term.setAttrs({ connType: 'wire', termId: p.id });
-            term.on('mousedown touchstart', (e) => { e.cancelBubble = true; if(this.onTerminalClick) this.onTerminalClick(term); });
+            term.on('mousedown touchstart', (e) => { e.cancelBubble = true; if (this.onTerminalClick) this.onTerminalClick(term); });
             this.group.add(term);
             this.terminals.push(term);
         });
@@ -165,8 +172,8 @@ _drawEnclosure() {
             x: centerX - 8, y: 185, width: 16, height: 10,
             fill: '#95a5a6', stroke: '#34495e', id: `${this.id}_pipe_i`
         });
-        pipePort.setAttrs({ connType: 'pipe' , termId: pipePort.id });
-        pipePort.on('mousedown touchstart', (e) => { e.cancelBubble = true; if(this.onTerminalClick) this.onTerminalClick(pipePort); });
+        pipePort.setAttrs({ connType: 'pipe', termId: pipePort.id });
+        pipePort.on('mousedown touchstart', (e) => { e.cancelBubble = true; if (this.onTerminalClick) this.onTerminalClick(pipePort); });
         this.group.add(pipePort);
         this.terminals.push(pipePort);
     }
