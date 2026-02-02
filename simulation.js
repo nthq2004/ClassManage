@@ -29,8 +29,8 @@ export class SimulationEngine {
 
     init() {
 
-        //如果有组件移动，重绘所有连线
-        this.devLayer.on('dragend', () => {
+        //如果有组件移动，重绘所有连线，移动过程中就重绘
+        this.devLayer.on('dragmove dragend', () => {
             this.reDrawConnections();
         });
 
