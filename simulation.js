@@ -110,6 +110,7 @@ export class SimulationEngine {
         this.selectedTerminal.stroke('#333');
         this.selectedTerminal.strokeWidth(2);
         this.selectedTerminal = null;
+        this.reDrawConnections();
         this.devLayer.draw();
     }
     /*每一个功能设备都是一个group，典型包括外壳、小组件、文字等，name属性用.查找，代表一类设备或一类属性，id属性用#查找，代表独一无二节点 */
@@ -147,5 +148,24 @@ export class SimulationEngine {
         const light = node.findOne('.status');
         if (light) light.fill(state === 'ON' ? '#2ecc71' : 'red');
         this.devLayer.batchDraw();
+    }
+    reDrawConnections() {
+        this.lineLayer.destroyChildren();
+        this.conns.forEach(conn => {
+            const fromTerm = this.stage.findOne('#' + conn.from);
+            const toTerm = this.stage.findOne('#' + conn.to);
+            if (fromTerm && toTerm) {
+                const fromPos = fromTerm.getAbsolutePosition();
+                const toPos = toTerm.getAbsolutePosition();
+                const line = new Konva.Line({
+                    points: [fromPos.x, fromPos.y, toPos.x, toPos.y],
+                    stroke: conn.type === 'wire' ? '#e74c3c' : '#3498db',
+                    strokeWidth: 4,
+                    lineCap: conn.type === 'wire'?'round':'square',
+                    lineJoin: 'round'
+                });
+                this.lineLayer.add(line);
+            };
+        });
     }
 }
