@@ -150,22 +150,23 @@ export class SimulationEngine {
         this.devLayer.batchDraw();
     }
     reDrawConnections() {
-        this.lineLayer.destroyChildren();
+        this.lineLayer.destroyChildren();// 清除现有连线
         this.conns.forEach(conn => {
-            const fromTerm = this.stage.findOne('#' + conn.from);
-            const toTerm = this.stage.findOne('#' + conn.to);
-            if (fromTerm && toTerm) {
-                const fromPos = fromTerm.getAbsolutePosition();
-                const toPos = toTerm.getAbsolutePosition();
-                const line = new Konva.Line({
-                    points: [fromPos.x, fromPos.y, toPos.x, toPos.y],
-                    stroke: conn.type === 'wire' ? '#e74c3c' : '#3498db',
-                    strokeWidth: 4,
-                    lineCap: conn.type === 'wire'?'round':'square',
-                    lineJoin: 'round'
+            const fromTerm = this.stage.findOne('#' + conn.from);// 获取起始端子
+            const toTerm = this.stage.findOne('#' + conn.to);// 获取终止端子
+            if (fromTerm && toTerm) {  // 确保端子存在
+                const fromPos = fromTerm.getAbsolutePosition(); // 获取端子在舞台上的绝对位置
+                const toPos = toTerm.getAbsolutePosition(); // 获取端子在舞台上的绝对位置
+                const line = new Konva.Line({  // 创建新连线
+                    points: [fromPos.x, fromPos.y, toPos.x, toPos.y],  // 起点和终点坐标
+                    stroke: conn.type === 'wire' ? '#e74c3c' : '#3498db', // 根据类型设置颜色
+                    strokeWidth: 4, // 线宽
+                    lineCap: conn.type === 'wire'?'round':'square', // 根据类型设置线帽样式
+                    lineJoin: 'round'  // 连接处样式
                 });
-                this.lineLayer.add(line);
+                this.lineLayer.add(line); // 添加连线到连线图层
             };
         });
+        this.lineLayer.draw();// 重绘连线图层
     }
 }

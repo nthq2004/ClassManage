@@ -161,7 +161,10 @@ export class PressureTransmitter {
         ];
         wireT.forEach(p => {
             const term = new Konva.Circle({ x: 5, y: p.y, radius: 6, fill: p.color, stroke: '#333', id: `${this.id}_wire_${p.id}` });
-            term.setAttrs({ connType: 'wire', termId: term.id });
+            term.setAttrs({
+                connType: 'wire',
+                termId: term.id()
+            });
             term.on('mousedown touchstart', (e) => { e.cancelBubble = true; if (this.onTerminalClick) this.onTerminalClick(term); });
             this.group.add(term);
             this.terminals.push(term);
@@ -172,7 +175,7 @@ export class PressureTransmitter {
             x: centerX - 8, y: 185, width: 16, height: 10,
             fill: '#95a5a6', stroke: '#34495e', id: `${this.id}_pipe_i`
         });
-            pipePort.setAttrs({ connType: 'pipe', termId: pipePort.id });
+            pipePort.setAttrs({ connType: 'pipe', termId: pipePort.id() });
         pipePort.on('mousedown touchstart', (e) => { e.cancelBubble = true; if (this.onTerminalClick) this.onTerminalClick(pipePort); });
         this.group.add(pipePort);
         this.terminals.push(pipePort);
