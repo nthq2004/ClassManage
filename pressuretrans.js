@@ -172,7 +172,7 @@ export class PressureTransmitter {
             x: centerX - 8, y: 185, width: 16, height: 10,
             fill: '#95a5a6', stroke: '#34495e', id: `${this.id}_pipe_i`
         });
-            term.setAttrs({ connType: 'pipe', termId: term.id });
+            pipePort.setAttrs({ connType: 'pipe', termId: pipePort.id });
         pipePort.on('mousedown touchstart', (e) => { e.cancelBubble = true; if (this.onTerminalClick) this.onTerminalClick(pipePort); });
         this.group.add(pipePort);
         this.terminals.push(pipePort);
