@@ -136,7 +136,8 @@ export class SimulationEngine {
         return (checkConn('dcP_term_p', 'pTr_term_p', wireConns) &&
             checkConn('pTr_term_n', 'aGa_term_p', wireConns) &&
             checkConn('aGa_term_n', 'dcP_term_n', wireConns) &&
-            this.devices['dcPower'].getvalue() >= 20)
+            wireConns.length === 3 &&
+            this.devices['dcPower'].getValue() >= 20)
 
     }
 

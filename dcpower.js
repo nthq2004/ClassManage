@@ -121,6 +121,7 @@ export class DCPower {
         });
 
         this.powerBtnGroup.add(this.powerBtnBase, btnText);
+        //每次点击切换状态，都要报告给上层，以便更新显示和逻辑。上层通过传入的 update 方法处理。所有产生输出信号的设备都应如此设计。
         this.powerBtnGroup.on('mousedown touchstart', () => {
             this.isOn = !this.isOn;
             this._updateBtnStyle();
@@ -180,6 +181,7 @@ export class DCPower {
                 this.update();
             };
             const onUp = () => {
+                this.update();
                 window.removeEventListener('mousemove', onMove);
                 window.removeEventListener('touchmove', onMove);
                 window.removeEventListener('mouseup', onUp);
@@ -250,7 +252,7 @@ export class DCPower {
         }
     }
     // 更新显示逻辑
-    update() {
+    updateSelf() {
         const angle = (this.voltage / 24) * 300 - 150;
         this.knobPointer.rotation(angle);
         if (!this.isOn) {
