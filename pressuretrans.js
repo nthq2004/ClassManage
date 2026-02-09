@@ -1,9 +1,9 @@
 export class PressureTransmitter {
     constructor(config) {
         this.layer = config.layer;
-        this.x = config.x || 100;
-        this.y = config.y || 100;
-        this.id = config.id || 'pt_01';
+        this.x = config.x || 210;
+        this.y = config.y || 90;
+        this.id = config.id || 'pTr';
 
         // 动态尺寸设置：最小宽140, 最小高180
         this.width = Math.max(140, Math.min(config.width || 140, 200));
@@ -11,14 +11,19 @@ export class PressureTransmitter {
 
         // 核心参数
         this.inputPressure = 0;
-        this.rangeMax = config.rangeMax || 2.0;
+        this.rangeMax = config.rangeMax || 1.0;
         this.zeroAdj = 0;
         this.spanAdj = 1.0;
+        this.type = 'pressTransmitter';
+
         this.isPowered = false;
+        this.outCurrent = 4.0; // 输出电流，默认4mA
         this.terminals = [];
+        this.knobs = {};// 存储旋钮对象，便于调整时访问
 
         // 端口点击回调        
         this.onTerminalClick = config.onTerminalClick || null;
+        this.onStateChange = config.onStateChange || null;
 
         this.group = new Konva.Group({
             x: this.x,
@@ -124,6 +129,7 @@ export class PressureTransmitter {
             rotor.add(new Konva.Line({ points: [0, -7, 0, 7], stroke: '#2f3542', strokeWidth: 3 }));
 
             knobGroup.add(base, rotor);
+            this.knobs[k.id] = rotor; // 存储旋钮对象
 
             rotor.on('mousedown touchstart', (e) => {
                 e.cancelBubble = true;
@@ -135,11 +141,15 @@ export class PressureTransmitter {
                     rotor.rotation(startRot + delta);
                     if (k.id === 'zero') this.zeroAdj = (rotor.rotation() / 360) * 0.2;
                     else this.spanAdj = 1.0 + (rotor.rotation() / 360) * 0.2;
-                    this.update(this.inputPressure, this.isPowered);
+                    this.update();
                 };
                 const onUp = () => {
-                    window.removeEventListener('mousemove', onMove); 
-                     window.removeEventListener('touchmove', onMove);                    
+                    const val = (this.inputPressure + this.zeroAdj) * this.spanAdj;
+                    //压力换算成电流，最小对应4mA，最大对应20mA。
+                    this.outCurrent = Math.min(Math.max((val / this.rangeMax) * 16 + 4, 4), 20);
+                    if (this.onStateChange) this.onStateChange(this.group.id(), { 'pTrCurrent': this.outCurrent, 'ZERO': this.zeroAdj, 'SPAN': this.spanAdj });
+                    window.removeEventListener('mousemove', onMove);
+                    window.removeEventListener('touchmove', onMove);
                     window.removeEventListener('mouseup', onUp);
                     window.removeEventListener('touchend', onUp);
                 };
@@ -163,7 +173,8 @@ export class PressureTransmitter {
             const term = new Konva.Circle({ x: 5, y: p.y, radius: 7, fill: p.color, stroke: '#333', id: `${this.id}_wire_${p.id}` });
             term.setAttrs({
                 connType: 'wire',
-                termId: term.id()
+                termId: term.id(),
+                parentId: this.group.id()
             });
             term.on('mousedown touchstart', (e) => { e.cancelBubble = true; if (this.onTerminalClick) this.onTerminalClick(term); });
             this.group.add(term);
@@ -175,24 +186,40 @@ export class PressureTransmitter {
             x: centerX - 10, y: 175, width: 20, height: 12,
             fill: '#95a5a6', stroke: '#34495e', id: `${this.id}_pipe_i`
         });
-            pipePort.setAttrs({ connType: 'pipe', termId: pipePort.id() });
+        pipePort.setAttrs({
+            connType: 'pipe',
+            termId: pipePort.id(),
+            parentId: this.group.id()
+        });
         pipePort.on('mousedown touchstart', (e) => { e.cancelBubble = true; if (this.onTerminalClick) this.onTerminalClick(pipePort); });
         this.group.add(pipePort);
         this.terminals.push(pipePort);
     }
 
-    update(p, hasPower) {
-        this.inputPressure = p;
+    setValue(pIn,hasPower){
+        this.inputPressure = pIn;
         this.isPowered = hasPower;
+        this.update();
+    }
+    getValue(){
+        return this.outCurrent;
+    }
 
+    update() {
+        // 更新旋钮位置,根据输入气压、零点调整和量程调整计算输出电流，并更新显示
+        this.knobs['zero'].rotation((this.zeroAdj / 0.2) * 360);
+        this.knobs['span'].rotation(((this.spanAdj - 1.0) / 0.2) * 360);
         if (!this.isPowered) {
+            this.outCurrent = 0;
             this.lcdBg.fill('#1a1a1a'); // 熄灭
             this.lcdText.text('');
             this.unitText.opacity(0);
         } else {
             this.lcdBg.fill('#2ed573'); // 亮起图片中的翠绿色
             const val = (this.inputPressure + this.zeroAdj) * this.spanAdj;
-            this.lcdText.text(Math.max(0, val).toFixed(3)); // 图片中是5位显示
+            //压力换算成电流，最小对应4mA，最大对应20mA。
+            this.outCurrent = Math.min(Math.max((val / this.rangeMax) * 16 + 4, 3.8), 20.5);
+            this.lcdText.text(Math.max(0, val).toFixed(3)); // 
             this.lcdText.fill('#1a1a1a'); // 液晶黑字
             this.unitText.opacity(1);
         }

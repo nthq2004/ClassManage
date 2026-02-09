@@ -6,17 +6,20 @@ export class DCPower {
     constructor(config) {
 
         this.layer = config.layer;
-        this.x = config.x || 100;
-        this.y = config.y || 100;
+        this.x = config.x || 20;
+        this.y = config.y || 20;
         // 动态尺寸：最小宽120，高140,最大宽240，高220，默认120x100
         this.width = Math.max(145, Math.min(config.width || 145, 200));
         this.height = Math.max(135, Math.min(config.height || 135, 145));
         // 状态变量
-        this.isOn = true;
+ 
+        this.isOn = false;
         this.voltage = config.voltage || 24; // 默认24V
         this.maxVoltage = 24;
         this.terminals = []; // 存储接线柱对象
+        this.type = 'dcPower';
 
+        this.onStateChange = config.onStateChange || null;
         this.onTerminalClick = config.onTerminalClick || null;
 
         // Konva 组
@@ -24,7 +27,7 @@ export class DCPower {
             x: this.x,
             y: this.y,
             draggable: true,
-            id: config.id || 'dcPower'
+            id: config.id || 'dcP'
         });
 
         this._init();
@@ -38,7 +41,6 @@ export class DCPower {
         this._drawTerminals();    // 绘制接线柱
 
         this.layer.add(this.group);
-        this._updateBtnStyle();
         this.update();
     }
 
@@ -124,7 +126,7 @@ export class DCPower {
         //每次点击切换状态，都要报告给上层，以便更新显示和逻辑。上层通过传入的 update 方法处理。所有产生输出信号的设备都应如此设计。
         this.powerBtnGroup.on('mousedown touchstart', () => {
             this.isOn = !this.isOn;
-            this._updateBtnStyle();
+            if (this.onStateChange) this.onStateChange(this.group.id(), { 'isOn': this.isOn, 'voltage': this.getValue() });
             this.update();
         });
 
@@ -182,6 +184,8 @@ export class DCPower {
             };
             const onUp = () => {
                 this.update();
+                // 报告状态变化
+                if (this.onStateChange) this.onStateChange(this.group.id(), { 'isOn': this.isOn, 'voltage': this.getValue() });
                 window.removeEventListener('mousemove', onMove);
                 window.removeEventListener('touchmove', onMove);
                 window.removeEventListener('mouseup', onUp);
@@ -212,13 +216,14 @@ export class DCPower {
                 fill: data.color,
                 stroke: '#333',
                 strokeWidth: 2,
-                id: `${this.group.id()}_term_${data.label}`
+                id: `${this.group.id()}_wire_${data.label}`
             });
 
             // 避开保留属性 'type'，改用 'connectionType'
             term.setAttrs({
                 connType: 'wire',
-                termId: term.id()
+                termId: term.id(),
+                parentId: this.group.id()
             });
 
             term.on('mousedown touchstart', (e) => {
@@ -252,7 +257,8 @@ export class DCPower {
         }
     }
     // 更新显示逻辑
-    updateSelf() {
+    update() {
+        this._updateBtnStyle();
         const angle = (this.voltage / 24) * 300 - 150;
         this.knobPointer.rotation(angle);
         if (!this.isOn) {
@@ -264,6 +270,12 @@ export class DCPower {
         }
         this.layer.batchDraw();
     }
+
+    setValue(isOn,voltage) {
+        this.isOn = isOn;
+        this.voltage = Math.max(0, Math.min(this.maxVoltage, voltage));
+        this.update();
+    }   
 
     // 获取当前输出电压
     getValue() {

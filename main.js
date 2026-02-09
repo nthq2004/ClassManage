@@ -34,27 +34,42 @@ window.network = new NetworkManager(BASE_URL, (data) => {
     // 模式同步逻辑
     if (myRole === 'STUDENT') {
         if (currentMode === 'DEMO') {
-            engine.isLocked = true; // 演示模式：学生不可操作，收到教师指令，设置设备状态。
-            if (data.type === 'TE_CMD') engine.updateState(data.deviceId, data.action);
-/*         } else if (currentMode === 'PRACTICE') {
-            const isMe = window.selectedSid === myInfo.userId;  //这个非常关键，消息是教师选择的学生是发出的，但消息是广播，所有学生都收到，如果是发个我的，isMe=true, isLocked=false，才可操作。
-            engine.isLocked = !isMe; // 仅选中的学生可操作   */          
+            lockEngine(true); // 演示模式：学生不可操作，收到教师指令，设置设备状态。
+            if (data.type === 'TE_CMD') engine.remOperation(data.deviceId, data.action);
         } else {
-            engine.isLocked = false;
+            lockEngine(false);
         }
     } else {
         // 教师端逻辑，在演练模式下，收到的信息从选中学生来，刷新自己的仿真设备状态
         if (currentMode === 'PRACTICE') {
-            engine.isLocked = true; //教师在演练模式下，锁定不能操作模型
+            lockEngine(true); //教师在演练模式下，锁定不能操作模型
             if (data.from === window.selectedSid) {
-                engine.updateState(data.deviceId, data.action);
+                engine.remOperation(data.deviceId, data.action);
             }
         } else {
-            engine.isLocked = false; //
+            lockEngine(false); 
         }
 
     }
 });
+
+// 全局函数，锁定或解锁仿真引擎的交互能力，教师端在演示模式和学生端在演练模式下调用，禁止操作模型，但可以看到状态变化；其它情况解锁，可以操作模型。实现方法是设置engine.isLocked变量，并且遍历所有设备的group，设置listening属性为false或true来禁止或允许交互事件。教师端在演示模式下，学生端在演练模式下调用window.lockEngine(true)，其它情况调用window.lockEngine(false)。。。。。。。。。。。。。。。。。。。。。同时，锁定时，禁止工具栏按钮的点击，解锁时允许点击。工具栏按钮在教师端和学生端都有，教师端的工具栏按钮在演示模式和演练模式下可用，在自由训练模式下可用；学生端的工具栏按钮在演练模式下可用，在其它模式下不可用。实现方法是在window.lockEngine函数中，除了设置engine.isLocked和设备group的listening属性外，还要根据myRole和currentMode来设置工具栏按钮的disabled属性。
+window.lockEngine = (locked) => {
+    engine.isLocked = locked;
+    Object.values(engine.devices).forEach(dev => {
+        if (dev.group) {
+            dev.group.listening(!locked);
+        }
+    });
+    // 设置工具栏按钮的可用状态，id="toolbar"下的按钮，isLocked为true时，教师端在演示模式和学生端在演练模式下，禁用按钮；其它情况启用按钮。教师端的工具栏按钮在演示模式和演练模式下可用，在自由训练模式下可用；学生端的工具栏按钮在演练模式下可用，在其它模式下不可用。
+    const toolbar = document.getElementById('toolbar');
+    if (toolbar) {
+        const buttons = toolbar.querySelectorAll('button');
+        buttons.forEach(btn => {
+            btn.disabled = locked;
+        });
+    }   
+}
 
 // UI 操作函数，注册界面，根据角色切换显示，window.toggleFields(role)方法。。。。。。。。。。。。
 // --- 登录逻辑修复 ---
@@ -185,3 +200,69 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 });
 
+// 监听窗口大小变化，调整舞台尺寸
+window.addEventListener('resize', () => {
+    //如果窗口高度小于500，隐藏最上面的信息栏，增加仿真区域高度
+    const infoBar = document.getElementById('info-bar');
+    const statusBar = document.getElementById('status-bar');
+    if (window.innerHeight < 500) {
+        infoBar.style.display = 'none';
+        statusBar.style.display = 'none';
+    } else {
+        infoBar.style.display = 'flex';
+        statusBar.style.display = 'flex';
+    }
+    engine.resize();
+});
+
+// 绑定工具栏按钮到 engine 方法
+window.addEventListener('DOMContentLoaded', () => {
+    const map = {
+        btnUndo: () => {window.network.send({
+        type: myRole === 'TEACHER' ? 'TE_CMD' : 'ST_CMD',
+        mode: currentMode, deviceId: 'ui', action: 'undo',
+        from: myInfo.userId, to: window.selectedSid
+    }); engine.undo() },
+        btnRedo: () => {window.network.send({
+        type: myRole === 'TEACHER' ? 'TE_CMD' : 'ST_CMD',
+        mode: currentMode, deviceId: 'ui', action: 'redo',
+        from: myInfo.userId, to: window.selectedSid
+    }); engine.redo()},
+
+        btnAutoWire: () =>{window.network.send({
+        type: myRole === 'TEACHER' ? 'TE_CMD' : 'ST_CMD',
+        mode: currentMode, deviceId: 'ui', action: 'autoWire',
+        from: myInfo.userId, to: window.selectedSid
+    }); engine.autoWire()},
+        btnStep5: () =>{window.network.send({
+        type: myRole === 'TEACHER' ? 'TE_CMD' : 'ST_CMD',
+        mode: currentMode, deviceId: 'ui', action: 'stepFive',
+        from: myInfo.userId, to: window.selectedSid
+    }); engine.stepFive()},
+
+        btnStep: () => engine.singleStep(),
+        btnOpDemo: () => engine.operationDemo(),
+        btnWorkflow: () =>{window.network.send({
+        type: myRole === 'TEACHER' ? 'TE_CMD' : 'ST_CMD',
+        mode: currentMode, deviceId: 'ui', action: 'workflow',
+        from: myInfo.userId, to: window.selectedSid
+    }); engine.openWorkflowPanel(false)},
+
+        btnSet: () => engine.openSettingsModal(),
+        btnReset: () =>{window.network.send({
+        type: myRole === 'TEACHER' ? 'TE_CMD' : 'ST_CMD',
+        mode: currentMode, deviceId: 'ui', action: 'reset',
+        from: myInfo.userId, to: window.selectedSid
+    });  engine.resetExperiment()},
+        btnTest: () => {window.network.send({
+        type: myRole === 'TEACHER' ? 'TE_CMD' : 'ST_CMD',
+        mode: currentMode, deviceId: 'ui', action: 'test',
+        from: myInfo.userId, to: window.selectedSid
+    });engine.openWorkflowPanel(true)},
+        btnTheory: () => engine.openTheoryTest()
+    };
+    Object.entries(map).forEach(([id, fn]) => {
+        const el = document.getElementById(id);
+        if (el) el.addEventListener('click', fn);
+    });
+});

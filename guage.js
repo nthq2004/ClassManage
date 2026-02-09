@@ -2,7 +2,7 @@ export class Gauge {
     constructor(options) {
         this.min = options.min ?? 0;
         this.max = options.max ?? 100;
-        this.value = options.value ?? this.min;
+        this.value = options.value ?? 0;
 
         // ✔ 船舶仪表标准：270°,这里采用-120° ~ +120°，240度
         this.startAngle = -120;
@@ -15,8 +15,8 @@ export class Gauge {
         this.layer = options.layer;//一般分为3层：线缆层、组件层、UI层，仪表放在组件层，最下面，以免遮挡线缆，UI放最上层
 
         this.group = new Konva.Group({
-            x: options.x,
-            y: options.y,
+            x: options.x || 110,
+            y: options.y || 270,
             id: options.id,
             name: options.name,
             draggable: true
@@ -182,7 +182,7 @@ export class Gauge {
        中心下方的LCD显示屏
     =============================== */
     _drawLcd() {
-        const w = 60;
+        const w = 70;
         const h = 24;
         const x = -w / 2;
         // 向下移动一点（原 0.38 -> 0.44）
@@ -281,19 +281,24 @@ export class Gauge {
                 const rad = Konva.getAngle(deg - 90); // 与刻度计算保持一致的角度转换
                 const x = r * Math.cos(rad);
                 const y = r * Math.sin(rad);
-                const id = `${this.group.id()}_term_${idx === 0 ? 'p' : 'n'}`;
+                const id = `${this.group.id()}_wire_${idx === 0 ? 'p' : 'n'}`;
                 const fill = idx === 0 ? '#ff4757' : '#2f3542';
                 const term = new Konva.Circle({
                     x, y,
                     radius: 8,
                     fill,
                     stroke: '#333',
-                    id
+                    id,
+                    //把圆异化成一个矩形，用什么参数呢？用cornerRadius
+                    cornerRadius: 4
+
+
                 });
                 term.strokeWidth(2);
                 term.stroke('#333');
                 term.setAttr('connType', 'wire');
                 term.setAttr('termId', id);
+                term.setAttr('parentId', this.group.id());
                 term.on('mousedown touchstart', (e) => {
                     e.cancelBubble = true;
                     this.onTerminalClick(term);
@@ -312,7 +317,7 @@ export class Gauge {
                 x: x - 10, // 居中修正（矩形起点在左上角）
                 y: y - 5,
                 width: 22,
-                height: 16,
+                height: 14,
                 fill: '#95a5a6', // 工业灰色，代表金属管路接口
                 cornerRadius: 2,
                 id
@@ -321,6 +326,7 @@ export class Gauge {
             term.stroke('#333');
             term.setAttr('connType', 'pipe');
             term.setAttr('termId', id);
+            term.setAttr('parentId', this.group.id());
             term.on('mousedown touchstart', (e) => {
                 e.cancelBubble = true;
                 this.onTerminalClick(term);
@@ -337,7 +343,15 @@ export class Gauge {
     =============================== */
     setValue(value) {
         this.value = value;
-        value = Math.max(this.min, Math.min(this.max, value));
+        this.update();
+    }
+
+    getValue() {
+        return this.value;
+    }
+
+    update() {
+        const value = Math.max(this.min, Math.min(this.max, this.value));
         const angle = this.valueToAngle(value);
 
         if (this.tween) this.tween.destroy();
@@ -364,7 +378,7 @@ export class Gauge {
         this._lcdInterval = setInterval(() => {
             const t = Math.min(1, (Date.now() - startTime) / duration);
             const cur = startValue + (endValue - startValue) * t;
-            if (this.lcdText) this.lcdText.text(cur.toFixed(1));
+            if (this.lcdText) this.lcdText.text(cur.toFixed(2));
             if (this.layer && this.layer.batchDraw) this.layer.batchDraw();
             if (t === 1) {
                 clearInterval(this._lcdInterval);
@@ -372,9 +386,4 @@ export class Gauge {
             }
         }, 30);
     }
-
-    getValue() {
-        return this.value;
-    }
-
 }

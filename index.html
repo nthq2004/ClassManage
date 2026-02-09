@@ -36,7 +36,21 @@
                 </div>
                 <button class="btn-logout" onclick="logout()">注销系统</button>
             </div>
+            <div id="toolbar">  <!--这是工具栏，包含11个按钮，分别是撤销、恢复、自动接线、5点步进、流程演练、单步演示、完整演示、参数设置、重置、评估测试、理论测试-->
+                <button id="btnUndo" title="撤销上一步">撤销</button>
+                <button id="btnRedo" title="恢复上一步">恢复</button>
+                <button id="btnAutoWire" title="自动完成所有接线">自动接线</button>
+                <button id="btnStep5" title="依次设定调压阀输出压力0-0.25-0.5-0.75-1">5点步进</button>
+                <button id="btnWorkflow" title="对操作流程进行演练">流程演练</button>
 
+                <button id="btnStep" title="单步演示">单步演示</button>
+                <button id="btnOpDemo" title="实验步骤完整演示">完整演示</button>
+
+                <button id="btnSet" title="设置压力变送器量程和压力表量程">参数设置</button>
+                <button id="btnReset" title="实验重置">重置</button>
+                <button id="btnTest" title="评估测试">评估测试</button>
+                <button id="btnTheory" title="理论测试">理论测试</button>
+            </div>
             <div id="container"></div> <!--这是画布，画仿真系统-->
 
             <div id="status-bar"> <!--这是底部状态栏-->
