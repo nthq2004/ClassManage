@@ -1452,15 +1452,15 @@ export class SimulationEngine {
         // 清空连线
         this.conns = [];
         this.connected = false;
+        this.devices['dcP'].setValue(false,24);
+        this.devices['stV'].setValue(false);
+        this.devices['pRe'].setPressure =0;
         this.uiLayer.destroyChildren(); // 清除 UI 元素
         this.lineLayer.destroyChildren(); // 清除连线
-        this.devLayer.destroyChildren(); // 清除设备图层
 
-        this.devices = {};
         this._history = [];
         this._historyIndex = -1;
         // 重新初始化默认设备
-        this.init();
         this.updateAllDevices();
         this._recordSnapshot();
         console.log('实验已重置');
