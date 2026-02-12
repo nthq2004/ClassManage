@@ -248,6 +248,11 @@ window.addEventListener('DOMContentLoaded', () => {
         from: myInfo.userId, to: window.selectedSid
     }); engine.openWorkflowPanel(false)},
 
+        btnLeakDrill: () => { window.network.send({ type: myRole === 'TEACHER' ? 'TE_CMD' : 'ST_CMD', mode: currentMode, deviceId: 'ui', action: 'leakDrill', from: myInfo.userId, to: window.selectedSid }); engine.startLeakDrill(); },
+        btnLeakAssess: () => { window.network.send({ type: myRole === 'TEACHER' ? 'TE_CMD' : 'ST_CMD', mode: currentMode, deviceId: 'ui', action: 'leakAssess', from: myInfo.userId, to: window.selectedSid }); engine.startLeakAssessment(); },
+        btnBreakDrill: () => { window.network.send({ type: myRole === 'TEACHER' ? 'TE_CMD' : 'ST_CMD', mode: currentMode, deviceId: 'ui', action: 'breakDrill', from: myInfo.userId, to: window.selectedSid }); engine.startBreakDrill(); },
+        btnBreakAssess: () => { window.network.send({ type: myRole === 'TEACHER' ? 'TE_CMD' : 'ST_CMD', mode: currentMode, deviceId: 'ui', action: 'breakAssess', from: myInfo.userId, to: window.selectedSid }); engine.startBreakAssessment(); },
+
         btnSet: () => engine.openSettingsModal(),
         btnReset: () =>{window.network.send({
         type: myRole === 'TEACHER' ? 'TE_CMD' : 'ST_CMD',

@@ -21,7 +21,15 @@ body {
 .hide {
     display: none !important;
 }
-
+@media screen and (max-width: 500px) {
+    #btnTest, 
+    #btnLeakAssess, 
+    #btnBreakAssess, 
+    #btnStep, 
+    #btnOpDemo {
+        display: none !important;
+    }
+}
 /* 1. 基础布局：始终填满当前视口 */
 #app {
     display: flex;

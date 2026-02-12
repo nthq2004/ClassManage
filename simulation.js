@@ -5,6 +5,9 @@ import { TeeConnector } from './teeconn.js'; //下层设备对象依赖的类，
 import { PressureRegulator } from './presreg.js'; //下层设备对象依赖的类，比如调压阀类
 import { StopValve } from './stopvalve.js'; //截止阀 
 import { AirBottle } from './airbottle.js'; //空气瓶
+import { Multimeter } from './multimeter.js'; //万用表
+import { AdjustableResistor } from './adjres.js'; //调节电阻
+import { LeakDetector } from './leakdetect.js';
 
 
 /*对外声明的类，构造时要传入画布ID，和处理函数，所有的仿真对象都包含在这个文件 */
@@ -140,7 +143,33 @@ export class SimulationEngine {
         });
         this.devices['caB'] = caBot;
 
+        const mulMeter = new Multimeter({
+            layer: this.devLayer,
+            id: 'muM',
+            name: '万用表',
+            onTerminalClick: this.onTermClick.bind(this),
+            onStateChange: this.reportDevState.bind(this),
+        });
+        this.devices['muM'] = mulMeter;
+
+        const adjRes = new AdjustableResistor({
+            layer: this.devLayer,
+            id: 'pRr',
+            name: '调节电阻',
+            onTerminalClick: this.onTermClick.bind(this),
+            onStateChange: this.reportDevState.bind(this),
+        });
+        this.devices['pRr'] = adjRes;
+
+        const leakD = new LeakDetector({
+            layer: this.devLayer,
+            id: 'leD',
+            name: '泄漏检测器',
+            getTerminals: this.getPipeTerminals.bind(this),
+        });
+        this.devices['leD'] = leakD;
         //topInfo显示当前步骤说明，在仿真操作演示过程中，根据预设的步骤列表，依次更新topInfo的文本内容，引导用户完成实验操作。最后一步是实验完成，提示用户3秒后关闭信息框。关闭函数隐藏topInfo，并清空文本内容。
+        this._bindRepairLogic();    //绑定演示步骤和评估步骤的逻辑函数，定义在后面，主要是设置步骤列表和实现showTopInfo函数。
         this.topInfo = new Konva.Text({
             id: 'topInfo',
             x: 300,
@@ -160,20 +189,21 @@ export class SimulationEngine {
             this.uiLayer.draw();
         };
         this.steps = [
-            { msg: "1. 24V电源(+) -> 压力变送器(+)", act: () => this.addConnectionAnimated({ from: 'dcP_wire_p', to: 'pTr_wire_p', type: 'wire' }) },
-            { msg: "2.  压力变送器(-) -> 电流表(+)", act: () => this.addConnectionAnimated({ from: 'pTr_wire_n', to: 'aGa_wire_p', type: 'wire' }) },
-            { msg: "3. 电流表(-) -> 24V电源(-)", act: () => this.addConnectionAnimated({ from: 'aGa_wire_n', to: 'dcP_wire_n', type: 'wire' }) },
-            { msg: "4. 空气瓶出口 -> 截止阀右端", act: () => this.addConnectionAnimated({ from: 'caB_pipe_o', to: 'stV_pipe_o', type: 'pipe' }) },
-            { msg: "5. 截止阀左端 -> 调节阀入口", act: () => this.addConnectionAnimated({ from: 'stV_pipe_i', to: 'pRe_pipe_i', type: 'pipe' }) },
-            { msg: "6. 调节阀出口 -> T型管下端", act: () => this.addConnectionAnimated({ from: 'pRe_pipe_o', to: 'tCo_pipe_l', type: 'pipe' }) },
-            { msg: "7. T型管上端 -> 压力表", act: () => this.addConnectionAnimated({ from: 'tCo_pipe_r', to: 'pGa_pipe_i', type: 'pipe' }) },
-            { msg: "8. T型管左端 -> 压力变送器气压口", act: () => this.addConnectionAnimated({ from: 'tCo_pipe_u', to: 'pTr_pipe_i', type: 'pipe' }) },
-            { msg: "9. 按下24V电源键,接通电源", act: async () => { await this.sleep(2000); this.devices['dcP'].setValue(true, 24); } },
-            { msg: "10. 合上截止阀,变送器气压为0,电流应为4mA.", act: async () => { await this.sleep(2000); this.devices['stV'].setValue(true); this.devices['pRe'].setPressure = 0; this.devices['pRe'].update() } },
-            { msg: "11. 将压力调节到0.25MPa,变送器电流应为8mA.", act: async () => { await this.sleep(2000); this.devices['pRe'].setPressure = 2.5; this.devices['pRe'].update() } },
-            { msg: "12. 将压力调节到0.5MPa,变送器电流应为12mA.", act: async () => { await this.sleep(2000); this.devices['pRe'].setPressure = 5; this.devices['pRe'].update() } },
-            { msg: "13. 将压力调节到0.75MPa,变送器电流应为16mA.", act: async () => { await this.sleep(2000); this.devices['pRe'].setPressure = 7.5; this.devices['pRe'].update() } },
-            { msg: "14. 将压力调节到1MPa,变送器电流应为20mA.", act: async () => { await this.sleep(2000); this.devices['pRe'].setPressure = 10; this.devices['pRe'].update() } },
+            { msg: "1. 24V电源(+) -> 负载电阻(+)", act: () => this.addConnectionAnimated({ from: 'dcP_wire_p', to: 'pRr_wire_p', type: 'wire' }) },
+            { msg: "2. 负载电阻(-)-> 压力变送器(+)", act: () => this.addConnectionAnimated({ from: 'pRr_wire_n', to: 'pTr_wire_p', type: 'wire' }) },
+            { msg: "3.  压力变送器(-) -> 电流表(+)", act: () => this.addConnectionAnimated({ from: 'pTr_wire_n', to: 'aGa_wire_p', type: 'wire' }) },
+            { msg: "4. 电流表(-) -> 24V电源(-)", act: () => this.addConnectionAnimated({ from: 'aGa_wire_n', to: 'dcP_wire_n', type: 'wire' }) },
+            { msg: "5. 空气瓶出口 -> 截止阀右端", act: () => this.addConnectionAnimated({ from: 'caB_pipe_o', to: 'stV_pipe_o', type: 'pipe' }) },
+            { msg: "6. 截止阀左端 -> 调节阀入口", act: () => this.addConnectionAnimated({ from: 'stV_pipe_i', to: 'pRe_pipe_i', type: 'pipe' }) },
+            { msg: "7. 调节阀出口 -> T型管下端", act: () => this.addConnectionAnimated({ from: 'pRe_pipe_o', to: 'tCo_pipe_l', type: 'pipe' }) },
+            { msg: "8. T型管上端 -> 压力表", act: () => this.addConnectionAnimated({ from: 'tCo_pipe_r', to: 'pGa_pipe_i', type: 'pipe' }) },
+            { msg: "9. T型管左端 -> 压力变送器气压口", act: () => this.addConnectionAnimated({ from: 'tCo_pipe_u', to: 'pTr_pipe_i', type: 'pipe' }) },
+            { msg: "10. 按下24V电源键,接通电源", act: async () => { await this.sleep(2000); this.devices['dcP'].setValue(true, 24); } },
+            { msg: "11. 合上截止阀,变送器气压为0,电流应为4mA.", act: async () => { await this.sleep(2000); this.devices['stV'].setValue(true); this.devices['pRe'].setPressure = 0; this.devices['pRe'].update(); this.updateAllDevices(); } },
+            { msg: `12. 将压力调节到${0.25 * this.pTransMax}MPa,变送器电流应为8mA.`, act: async () => { await this.sleep(2000); this.devices['pRe'].setPressure = 2.5 * this.pTransMax; this.devices['pRe'].update(); this.updateAllDevices(); } },
+            { msg: `13. 将压力调节到${0.5 * this.pTransMax}MPa,变送器电流应为12mA.`, act: async () => { await this.sleep(2000); this.devices['pRe'].setPressure = 5 * this.pTransMax; this.devices['pRe'].update(); this.updateAllDevices(); } },
+            { msg: `14. 将压力调节到${0.75 * this.pTransMax}MPa,变送器电流应为16mA.`, act: async () => { await this.sleep(2000); this.devices['pRe'].setPressure = 7.5 * this.pTransMax; this.devices['pRe'].update(); this.updateAllDevices(); } },
+            { msg: `15. 将压力调节到${this.pTransMax}MPa,变送器电流应为20mA.`, act: async () => { await this.sleep(2000); this.devices['pRe'].setPressure = 10 * this.pTransMax; this.devices['pRe'].update(); this.updateAllDevices(); } },
             { msg: "演示完成,延时3s关闭此信息框.", act: () => setTimeout(() => this.topInfo.hide(), 3000) },
         ];
         this.uiLayer.draw();
@@ -294,59 +324,325 @@ export class SimulationEngine {
         this.devLayer.draw();
     }
 
-    //检查电路连通性，要求电源、变送器、电流表串联连接，且极性正确，返回true或false 。
-    //更改一下，即使电路中没有电流表，只要电源和变送器正确连接，且极性正确，也算电路连通，返回true，否则返回false。
-    checkCircuit() {
-        const wireConns = this.conns.filter(conn => conn.type === 'wire');
-        const psu = this.devices['dcP'];
-        // 1. 基础条件判定：电源是否存在、开启且电压足够
-        if (!psu || !psu.isOn || psu.getValue() < 16) return false;
-        // 串联回路只有3个设备时，必须刚好3根线；只有电源和变送器两台设备时，必须刚好2根线。其他情况都不满足要求。
-        if (wireConns.length !== 3 && wireConns.length !== 2) return false;
-        /**
-         * 获取与当前端子相连的所有对端端子
-         */
-        const getConnectedTerminals = (termId) => {
-            const neighbors = [];
-            wireConns.forEach(c => {
-                if (c.from === termId) neighbors.push(c.to);
-                if (c.to === termId) neighbors.push(c.from);
-            });
-            return neighbors;
-        };
-        /**
-         * 极性敏感的路径搜索
-         * @param {string} currentTerm 当前所在的端子
-         * @param {string} targetTerm 目标终点端子（电源负极）
-         * @param {Set} visitedDevices 已访问的设备集，防止回路死循环
-         */
-        const trace = (currentTerm, targetTerm, visitedDevices) => {
-            if (currentTerm === targetTerm) return visitedDevices.size === 3; // 回到负极且经过了所有设备
-            const nextTerms = getConnectedTerminals(currentTerm);
+    /**
+     * 核心仿真函数：每当开关、档位或连线变化时调用，计算电路的连通性和电位分布，并更新设备状态。主要步骤：
+ * 1. 初始化：收集所有电气端子，建立初始电位映射。
+ * 2. 构建初始集群：根据物理导线连接关系，将端子分成若干集群。
+ * 3. 动态合并：处理开关及“导通型”设备，将它们连接的集群合并。
+ * 4. 路径完整性判定：检查电源正负极是否通过变送器和电阻构成闭合回路。
+ * 5. 电位计算：如果路径完整，注入电源电位，并根据变送器和电阻的关系计算各端子电位。
+ * 6. 更新设备状态：根据端子电位更新变送器、电流表等设备的显示值和工作状态。
+     */
+    updateCircuitSimulation() {
+        const wireConns = this.conns.filter(c => c.type === 'wire');
+        this.allTerminalIds = new Set(); // 收集所有电气端子ID
+        this.eDevices = {}; // 收集所有电气设备对象，key是设备ID，value是设备对象
+        const terminals = {};
 
-            for (let nextTerm of nextTerms) {
-                const [devId, , role] = nextTerm.split('_'); // 假设 ID 格式为 devId_wire_role
-                // 极性校验：进入任何非电源设备，必须连接到其 P 端
-                if (devId !== 'dcP' && role === 'p') {
-                    if (!visitedDevices.has(devId)) {
-                        // 进入 P，自动跳向该设备的 N 端继续搜索
-                        const exitTerm = `${devId}_wire_n`;
-                        const newVisited = new Set(visitedDevices).add(devId);
-                        if (trace(exitTerm, targetTerm, newVisited)) return true;
+        // 1. 初始化：所有端点电位清零
+        Object.values(this.devices).forEach(device => {
+            // 遍历设备内部定义的 terminals 数组
+            if (device.terminals && Array.isArray(device.terminals)) {
+                device.terminals.forEach(terminal => {
+                    // 仅初始化气路端口
+                    if (terminal.getAttr('connType') === 'wire') {
+                        // terminal.termId 应该是类似 "acB_pipe_i" 的完整 ID
+                        this.allTerminalIds.add(terminal.getAttr('termId')); // 收集所有端子ID
+                        this.eDevices[terminal.getAttr('parentId')] = device; // 收集所有电气设备)
+                        terminals[terminal.getAttr('termId')] = 0;
+                    }
+                });
+            }
+        });
+        const psu = this.eDevices['dcP'];
+        const pTr = this.eDevices['pTr'];
+        const pRr = this.eDevices['pRr'];
+        // const aGa = this.eDevices['aGa'];
+
+        // 2. 构建初始集群（物理导线）
+        let clusters = this._getElectricalClusters(wireConns);
+
+        // 3. 动态合并：处理开关及“导通型”设备
+        this._bridgeZeroResistanceDevices(clusters);
+
+        // 如果电源没开，直接更新状态并退出
+        if (!psu || !psu.isOn) {
+            this._applyVoltageToDevices(terminals, clusters, 0, false);
+            return terminals;
+        }
+
+        // 4. 定义关键节点索引
+        const getRoot = (id) => clusters.findIndex(c => c.has(id));
+        const posRoot = getRoot('dcP_wire_p');
+        const negRoot = getRoot('dcP_wire_n');
+        const pTr_pRoot = getRoot('pTr_wire_p');
+        const pTr_nRoot = getRoot('pTr_wire_n');
+        const res_pRoot = getRoot('pRr_wire_p');
+        const res_nRoot = getRoot('pRr_wire_n');
+
+        // 5. 路径完整性判定 (Path Trace)
+        // 判定电源正负极是否通过 [电阻] 和 [变送器] 构成了闭合回路
+        let isPathComplete = false;
+        if (posRoot !== -1 && negRoot !== -1) {
+            // 判定变送器P端是否可达正极 (直接连或通过电阻连)
+            const pTrP_to_Pos = (pTr_pRoot === posRoot) ||
+                (pTr_pRoot === res_pRoot && res_nRoot === posRoot) ||
+                (pTr_pRoot === res_nRoot && res_pRoot === posRoot);
+
+            // 判定变送器N端是否可达负极 (直接连或通过电阻连)
+            const pTrN_to_Neg = (pTr_nRoot === negRoot) ||
+                (pTr_nRoot === res_pRoot && res_nRoot === negRoot) ||
+                (pTr_nRoot === res_nRoot && res_pRoot === negRoot);
+
+            if (pTrP_to_Pos && pTrN_to_Neg) isPathComplete = true;
+        }
+        // 2. 物理有效性检查：负载必须两端都接线且不在同一个集群内（未被短路）
+        const isPTrConnected = (pTr_pRoot !== -1 && pTr_nRoot !== -1 && pTr_pRoot !== pTr_nRoot);
+        const isPRrConnected = (res_pRoot !== -1 && res_nRoot !== -1 && res_pRoot !== res_nRoot);
+
+        // 3. 重新判定主回路连通性 (串联逻辑)
+        // 只有当变送器和电阻都“双端接入”且首尾相连通往电源正负时，路径才真正完整
+        let realPathComplete = isPathComplete && isPTrConnected && isPRrConnected;
+        // 如果变送器内部断线或电源正端断线，则回路不能导通
+        if (pTr && pTr.isBroken) realPathComplete = false;
+        if (this._break && this._break.type === 'dcP_p') realPathComplete = false;
+        this.connected = realPathComplete; // 更新主回路连通状态，供设备更新时参考
+
+        const V_MAX = psu.getValue();
+        // 注入电源电位
+        // 如果存在电源输出断线故障，则 dcP_wire_p 输出为 0
+        if (this._break && this._break.type === 'dcP_p') {
+            this._setClusterVoltage(clusters, terminals, 'dcP_wire_p', 0);
+        } else {
+            this._setClusterVoltage(clusters, terminals, 'dcP_wire_p', V_MAX);
+        }
+        this._setClusterVoltage(clusters, terminals, 'dcP_wire_n', 0);
+
+        // 特殊情况：若变送器内部断线（回路不导通），电流为 0，但电压应仍可通过导线/电阻到达各端口。
+        // 此时不进行电压降扩散计算，而是将变送器与电阻两端的集群电位设置为电源正/负电位（无电压降）。
+        if (pTr && pTr.isBroken) {
+            // 将变送器正端与电阻正端视为与电源正端同一电位
+            this._setClusterVoltage(clusters, terminals, 'pTr_wire_p', V_MAX);
+            this._setClusterVoltage(clusters, terminals, 'pRr_wire_p', V_MAX);
+            // 将变送器负端与电阻负端视为与电源负端同一电位
+            this._setClusterVoltage(clusters, terminals, 'pTr_wire_n', 0);
+            this._setClusterVoltage(clusters, terminals, 'pRr_wire_n', V_MAX);
+            // 确保后续不会将变送器标记为有电流
+        }
+
+        // 6. 电位计算 (电压降扩散)
+        let currentA = 0;
+        if (realPathComplete) {
+            pTr.setPower(true); // 变送器有电了，设置功率为1，表示正常工作状态
+            // aGa.setPower(true); // 电流表有电了，设置功率为1，表示正常工作状态
+
+            currentA = pTr.getValue(); // 从变送器读取当前实时电流 (4-20A)
+            const vRes = currentA * pRr.getValue() / 1000; // 计算电阻压降
+
+
+            // 多轮扩散以处理不同位置的电阻
+            for (let i = 0; i < 5; i++) {
+                // 处理电阻压降逻辑
+                if (res_pRoot !== -1 && res_nRoot !== -1) {
+                    if (terminals['pRr_wire_p'] > 0 && terminals['pRr_wire_n'] === 0) {
+                        this._setClusterVoltage(clusters, terminals, 'pRr_wire_n', terminals['pRr_wire_p'] - vRes);
+                    } else if (terminals['pRr_wire_n'] > 0 && terminals['pRr_wire_p'] === 0) {
+                        this._setClusterVoltage(clusters, terminals, 'pRr_wire_p', terminals['pRr_wire_n'] - vRes);
                     }
                 }
-                // 如果直接连到了电源负极
-                else if (nextTerm === targetTerm) {
-                    // 直接连接到负极，检查是否已经经过了所有设备（PT 和 Ammeter）或者只有电源和变送器两台设备时，经过了变送器。                    
-                    if (visitedDevices.size === 3 || visitedDevices.size === 2) return true; // 已经过 PT 和 Ammeter 或者只有电源和变送器
+                // 处理变送器电位
+                if (pTr_pRoot !== -1 && pTr_nRoot !== -1) {
+                    // 如果N端连接了电阻的非负极侧，则N端电位为vRes，否则为0
+                    const nIsNearRes = (pTr_nRoot === res_pRoot || pTr_nRoot === res_nRoot);
+                    const resIsAtNeg = (res_pRoot === negRoot || res_nRoot === negRoot);
+                    if (nIsNearRes && resIsAtNeg) {
+                        this._setClusterVoltage(clusters, terminals, 'pTr_wire_n', vRes);
+                    }
                 }
             }
-            return false;
-        };
-        // 从电源正极出发，寻找通往电源负极且极性正确的路径
-        // 初始已访问设备只包含电源自己
-        return trace('dcP_wire_p', 'dcP_wire_n', new Set(['dcP']));
+        }
+        // 7. 更新设备显示
+        this._applyVoltageToDevices(terminals, clusters, currentA, realPathComplete);
+        return terminals;
     }
+    /**
+     * 辅助A：生成初始物理连接集群
+     */
+    _getElectricalClusters(wireConns) {
+        const parent = {};
+        const find = (i) => {
+            if (parent[i] === undefined) return (parent[i] = i);
+            return parent[i] === i ? i : (parent[i] = find(parent[i]));
+        };
+        const union = (i, j) => {
+            const rootI = find(i), rootJ = find(j);
+            if (rootI !== rootJ) parent[rootI] = rootJ;
+        };
+
+        wireConns.forEach(c => union(c.from, c.to));
+
+        const clusterMap = {};
+        Object.keys(parent).forEach(id => {
+            const root = find(id);
+            if (!clusterMap[root]) clusterMap[root] = new Set();
+            clusterMap[root].add(id);
+        });
+        return Object.values(clusterMap);
+    }
+    /**
+     * 辅助B：合并零电阻设备：导线、电流表、mA档、闭合的开关
+     */
+    _bridgeZeroResistanceDevices(clusters) {
+        const bridge = (id1, id2) => {
+            const i1 = clusters.findIndex(c => c.has(id1));
+            const i2 = clusters.findIndex(c => c.has(id2));
+            if (i1 !== -1 && i2 !== -1 && i1 !== i2) {
+                clusters[i1].forEach(id => clusters[i2].add(id));
+                clusters.splice(i1, 1);
+            }
+        };
+
+        Object.values(this.eDevices).forEach(dev => {
+            const id = dev.group.id();
+            // 开关逻辑：只有不处于 isOpen 状态时才桥接
+            if (id === 'swI' && !dev.isOpen) bridge('swI_wire_1', 'swI_wire_2');
+
+            // 电流表和万用表mA档逻辑
+            if (id === 'aGa') bridge('aGa_wire_p', 'aGa_wire_n');
+            if (id === 'muM' && dev.mode === 'MA') bridge('muM_wire_ma', 'muM_wire_com');
+        });
+    }
+    /**
+     * 辅助 C：设置集群电位
+     */
+    _setClusterVoltage(clusters, terminals, termId, volt) {
+        const cluster = clusters.find(c => c.has(termId));
+        if (cluster) {
+            cluster.forEach(id => terminals[id] = volt);
+        } else {
+            terminals[termId] = volt;
+        }
+    }
+    /**
+     * 辅助D：更新设备状态及显示读数
+     */
+    _applyVoltageToDevices(terminals, clusters, currentA, realPathComplete) {
+
+        const getRoot = (id) => clusters.findIndex(c => c.has(id));
+
+        // 获取所有负载的端子根索引
+        const posRoot = getRoot('dcP_wire_p');
+        const negRoot = getRoot('dcP_wire_n');
+
+        const pTr_p = getRoot('pTr_wire_p');
+        const pTr_n = getRoot('pTr_wire_n');
+        const pRr_p = getRoot('pRr_wire_p');
+        const pRr_n = getRoot('pRr_wire_n');
+
+        //   只要电路完整，我们需要识别出构成闭合回路的所有集群根索引
+        const activeClusterIndices = new Set();
+        // const isPTrConnected = (pTr_p !== -1 && pTr_n !== -1 && pTr_p !== pTr_n);
+        const isPRrConnected = (pRr_p !== -1 && pRr_n !== -1 && pRr_p !== pRr_n);
+
+        if (realPathComplete) {
+            activeClusterIndices.add(posRoot);
+            activeClusterIndices.add(negRoot);
+
+            // 将这些负载的端子所属的集群全部标记为“活跃”
+            [pTr_p, pTr_n, pRr_p, pRr_n].forEach(idx => {
+                if (idx !== -1) activeClusterIndices.add(idx);
+            });
+        }
+
+        Object.values(this.eDevices).forEach(dev => {
+            const devId = dev.group.id();
+            if (devId === 'dcP') return;
+
+            // 获取设备两端的集群根
+            const pTerm = (devId === 'muM') ?
+                (dev.mode === 'MA' ? 'muM_wire_ma' : 'muM_wire_v') : `${devId}_wire_p`;
+            const nTerm = (devId === 'muM') ? 'muM_wire_com' : `${devId}_wire_n`;
+
+            const pRoot = clusters.findIndex(c => c.has(pTerm));
+            const nRoot = clusters.findIndex(c => c.has(nTerm));
+
+            // --- 判定逻辑修正 ---
+            // 只要设备所属的集群在“活跃集群集合”中，说明它就在电流通路上
+            // 设备要显示电流，前提是：1.整体回路闭合 2.设备的两端都在活跃路径集群中
+            const inActivePath = realPathComplete && (pRoot !== -1 && nRoot !== -1) &&
+                (activeClusterIndices.has(pRoot) && activeClusterIndices.has(nRoot));
+
+            if (devId === 'aGa' || (devId === 'muM' && dev.mode === 'MA')) {
+                dev.setPower(inActivePath);
+                const val = inActivePath ? currentA : 0;
+                devId === 'aGa' ? dev.setValue(val) : dev.setInputValue(val);
+            }
+
+            if (devId === 'pTr') {
+                dev.setPower(realPathComplete);
+                dev.update();
+            }
+            // --- 万用表电阻档 (RES) ---
+            if (devId === 'muM' && dev.mode === 'RES') {
+                const vM = clusters.findIndex(c => c.has('muM_wire_v'));
+                const cM = clusters.findIndex(c => c.has('muM_wire_com'));
+                // 只有当表笔精准对接电阻两端（且电阻两端没被连在一起短路）时才有读数
+
+                if (vM !== -1 && cM !== -1 && vM === cM ) {
+                    // 1. 同一集群：说明通过导线或闭合开关直接连通
+                    dev.setInputValue(0); // 显示接近0的数值
+
+                } else {
+                    const isMeasuringRes = isPRrConnected && (
+                        (vM === pRr_p && cM === pRr_n) || (vM === pRr_n && cM === pRr_p)
+                    );
+                    dev.setInputValue(!inActivePath ? (isMeasuringRes ? this.devices['pRr'].getValue() : 10000000000) : 10000000000); // 如果在测量电阻且路径有效，显示电阻值，否则显示无穷大（10GΩ）
+                }
+
+            }
+            if (devId === 'muM' && dev.mode === 'DCV') {
+                const vTerm = 'muM_wire_v';
+                const cTerm = 'muM_wire_com';
+
+                // 获取两个表笔所属的集群索引
+                const vRoot = clusters.findIndex(c => c.has(vTerm));
+                const cRoot = clusters.findIndex(c => c.has(cTerm));
+
+                // 严谨判定：
+                // 只有当两个表笔都接在了“已定义”的电路节点上（即在 clusters 中）时，才显示电压
+                // 如果任何一个端子没接线，它的 root 会是 -1，此时 isValid 为 false
+                const isValid = (vRoot !== -1 && cRoot !== -1);
+
+                if (isValid) {
+                    const voltageDiff = terminals[vTerm] - terminals[cTerm];
+                    dev.setInputValue(voltageDiff);
+                } else {
+                    // 只要有一根表笔悬空，读数立刻归零
+                    dev.setInputValue(0);
+                }
+            }
+            // --- 万用表蜂鸣器档 (BEEP) ---
+            if (devId === 'muM' && dev.mode === 'BEEP') {
+                const vM = clusters.findIndex(c => c.has('muM_wire_v'));
+                const cM = clusters.findIndex(c => c.has('muM_wire_com'));
+
+                // 只有在断电情况下测量才有意义 (模拟真实保护逻辑)
+                const isPowerOff = this.devices['dcP'] && !this.devices['dcP'].isOn;
+
+                if (vM !== -1 && cM !== -1 && vM === cM) {
+                    // 1. 同一集群：说明通过导线或闭合开关直接连通
+                    dev.setInputValue(0); // 显示接近0的数值
+                    if (isPowerOff) dev.triggerBeep(true);
+                } else {
+                    // 2. 不同集群或悬空：不响
+                    dev.setInputValue(10000000000);
+                    dev.triggerBeep(false);
+                }
+            }
+        });
+    }
+
+
     /** 通用气路拓扑计算逻辑 */
     computeTermPress() {
         // 1. 初始化所有端子的压力为 0
@@ -395,6 +691,17 @@ export class SimulationEngine {
                 if (nextPortId) {
                     // 压力通过管路平传
                     terminalPressures[nextPortId] = currentPressure;
+
+                    // 如果该端口被标记为泄漏，则实际输入压力随机降低 10% ~ 30%
+                    try {
+                        const termNode = this.stage.findOne('#' + nextPortId);
+                        if (termNode && termNode.getAttr && termNode.getAttr('isLeaking')) {
+                            const lossRatio = 0.1 + Math.random() * 0.2; // 0.1 ~ 0.3
+                            terminalPressures[nextPortId] = Math.max(0, currentPressure * (1 - lossRatio));
+                        }
+                    } catch (e) {
+                        /* ignore */
+                    }
 
                     // 查找该端口所属的设备，处理内部逻辑转换
                     const deviceId = nextPortId.split('_pipe_')[0];
@@ -446,7 +753,73 @@ export class SimulationEngine {
     }
     // 设备状态变化上报处理函数,例如电源开关状态变化,变送器输入压力变化等,也可以调用上层设备逻辑函数onAction，让main.js处理
     //编写remOperation函数，接收设备ID和状态对象，根据设备类型和状态变化的内容，判断是否需要调用updateAllDevices来更新仿真状态。比如当电源开关状态变化时，需要重新计算电路连通性和压力分布，所以调用updateAllDevices；当变送器输入压力变化时，也需要重新计算压力分布，所以调用updateAllDevices；但如果是压力表的显示状态变化，就不需要调用updateAllDevices了，因为压力表的显示是由输入压力直接决定的，不会反过来影响其他设备。
+    /**
+     * 获取引擎下所有设备的气路端口
+     * @returns {Konva.Node[]} 返回所有标记为 pipe 的端口节点数组
+     */
+    getPipeTerminals() {
+        const pipeTerminals = [];
 
+        // 1. 遍历所有注册的设备 (假设存储在 this.devices 中)
+        Object.values(this.devices).forEach(device => {
+            // 2. 检查设备是否有 terminals 属性 (存储了 Konva 节点)
+            if (device.terminals) {
+                Object.values(device.terminals).forEach(terminalNode => {
+                    // 3. 筛选出 connType 为 pipe 的端口
+                    if (terminalNode.getAttr('connType') === 'pipe') {
+                        pipeTerminals.push(terminalNode);
+                    }
+                });
+            }
+        });
+
+        return pipeTerminals;
+    }
+
+    _bindRepairLogic() {
+        // 绑定所有端子（气路与电气），用于双击修复 leak / break 故障
+        const allTerms = [];
+        Object.values(this.devices).forEach(dev => {
+            if (dev.terminals && Array.isArray(dev.terminals)) dev.terminals.forEach(t => allTerms.push(t));
+        });
+
+        allTerms.forEach(term => {
+            term.off('dblclick dbltap');
+            term.on('dblclick dbltap', (e) => {
+                // 漏气修复
+                if (term.getAttr('isLeaking')) {
+                    term.setAttr('isLeaking', false);
+                    // 若 LeakDetector 有清理方法则调用
+                    if (this.devices['leD'] && typeof this.devices['leD'].clearAllBubbles === 'function') {
+                        this.devices['leD'].clearAllBubbles();
+                    }
+                    this.updateAllDevices();
+                    return;
+                }
+
+                // 电气断线修复（针对外部导线端口被标记为 isBroken）
+                if (term.getAttr('isBroken')) {
+                    term.setAttr('isBroken', false);
+                    // 如果是电源输出断线，清除全局断线标记
+                    if (this._break && this._break.type === 'dcP_p' && term.id() === 'dcP_wire_p') {
+                        this._break = null;
+                    }
+                    this.updateAllDevices();
+                    return;
+                }
+
+                // 变送器内部断线：双击变送器的 p 端修复
+                if (term.id && term.id().startsWith('pTr_wire_')) {
+                    if (this.devices['pTr'] && this.devices['pTr'].isBroken) {
+                        this.devices['pTr'].isBroken = false;
+                        if (this._break && this._break.type === 'pTr_internal') this._break = null;
+                        this.updateAllDevices();
+                        return;
+                    }
+                }
+            });
+        });
+    }
     remOperation(devId, state) {
         console.log(`Device ${devId} state changed:`, state);
         switch (devId) {
@@ -458,8 +831,12 @@ export class SimulationEngine {
                     case 'undo': this.undo(); break;
                     case 'redo': this.redo(); break;
                     case 'reset': this.resetExperiment(); break;
-                    case 'workflow': this.openWorkflowPanel(false); break;
-                    case 'test': this.openWorkflowPanel(true); break;
+                    case 'workflow': this.openWorkflowPanel(false, false); break;
+                    case 'test': this.openWorkflowPanel(true, false); break;
+                    // case 'leakDrill': this.startLeakDrill(); break;
+                    // case 'leakAssess': this.startLeakAssessment(); break;
+                    // case 'breakDrill': this.startBreakDrill(); break;
+                    // case 'breakAssess': this.startBreakAssessment(); break;
                     case 'close': this.closeWorkflowPanel(); break;
                     default: console.warn(`未知的 UI 指令: ${state}`);
                 }
@@ -521,16 +898,12 @@ export class SimulationEngine {
         try {
             // 1. 物理计算层：根据当前拓扑计算每个节点的压力
             this.pressureMap = this.computeTermPress();
+            this.voltageMap = this.updateCircuitSimulation(); // 计算电路状态并更新设备显示
 
-            // 2. 表现层更新：将计算结果推送给设备
+            // 2. 表现层更新：将计算结果推送给设备,电流直接在上个函数updateCircuitSimulation里更新了，这里只需要更新压力相关的设备即可。
             this.devices['pRe'].setValue(this.pressureMap['pRe_pipe_i']);
             this.devices['pGa'].setValue(this.pressureMap['pGa_pipe_i']);
-            this.devices['pTr'].setValue(this.pressureMap['pTr_pipe_i'] / 10, this.checkCircuit());
-
-            //只有电流表接入了电路，才根据变送器的输出压力计算电流表的读数，否则电流表显示0。
-            //主要是检查电流表的两个端子都保护接到了电路上了，且电路连通，才根据变送器的输出压力计算电流表的读数，否则电流表显示0。
-
-            this.devices['aGa'].setValue(this.devices['pTr'].getValue());
+            this.devices['pTr'].setValue(this.pressureMap['pTr_pipe_i'] / 10);
 
             // 3. 连线层重绘
             // 注意：不要清空整个 uiLayer（会移除 topInfo），仅重绘连线图层
@@ -564,7 +937,8 @@ export class SimulationEngine {
     autoWire() {
         // 自动连线示例：连接电源正极到变送器正极，变送器负极到电流表正极，电流表负极到电源负极,并且连接截止阀和调压阀的气路，连接调压阀和T型管的气路，连接T型管和压力表的气路，连接T型管和变送器的气路。
         const autoConns = [
-            { from: 'dcP_wire_p', to: 'pTr_wire_p', type: 'wire' },
+            { from: 'dcP_wire_p', to: 'pRr_wire_p', type: 'wire' },
+            { from: 'pRr_wire_n', to: 'pTr_wire_p', type: 'wire' },
             { from: 'pTr_wire_n', to: 'aGa_wire_p', type: 'wire' },
             { from: 'aGa_wire_n', to: 'dcP_wire_n', type: 'wire' },
             { from: 'caB_pipe_o', to: 'stV_pipe_o', type: 'pipe' },
@@ -589,6 +963,8 @@ export class SimulationEngine {
         const nextIndex = (pressures.indexOf(current) + 1) % pressures.length;
         this.devices['pRe'].setPressure = pressures[nextIndex];
         this.devices['pRe'].update();
+        this.devices['pTr'].setValue(this.devices['pRe'].getValue() / 10);
+        this.devices['aGa'].setValue(this.devices['pTr'].getValue());
         this.updateAllDevices();
     }
     // 单步演示：做一次仿真更新
@@ -875,27 +1251,30 @@ export class SimulationEngine {
         renderQuestion();
     }
     // 打开流程演练侧栏（右侧），显示 this.workflow 列表并循环检测每步条件
-    openWorkflowPanel(testMode = false) {
+    openWorkflowPanel(testMode = false, preserveWorkflow = false) {
         // testMode: true 表示评估测试模式（只显示已完成步骤，底部显示当前进行到第几步，全部完成显示评估合格）
         this._workflowTestMode = !!testMode;
         if (this._workflowPanelEl) return;
-        // 确保 workflow 已初始化
-        this.workflow = [
-            { msg: "1. 连接电源正极到变送器正极", act: () => { return this.conns.some(c => c.from === 'dcP_wire_p' && c.to === 'pTr_wire_p') || this.conns.some(c => c.from === 'pTr_wire_p' && c.to === 'dcP_wire_p') } },
-            { msg: "2. 连接变送器负极到电流表正极", act: () => { return this.conns.some(c => c.from === 'pTr_wire_n' && c.to === 'aGa_wire_p') || this.conns.some(c => c.from === 'aGa_wire_p' && c.to === 'pTr_wire_n') } },
-            { msg: "3. 连接电流表负极到电源负极", act: () => { return this.conns.some(c => c.from === 'aGa_wire_n' && c.to === 'dcP_wire_n') || this.conns.some(c => c.from === 'dcP_wire_n' && c.to === 'aGa_wire_n') } },
-            { msg: "4. 空气瓶出口连接到截止阀右端", act: () => { return this.conns.some(c => c.from === 'caB_pipe_o' && c.to === 'stV_pipe_o') || this.conns.some(c => c.from === 'stV_pipe_o' && c.to === 'caB_pipe_o') } },
-            { msg: "5. 截止阀左端连接到调压阀输入端", act: () => { return this.conns.some(c => c.from === 'stV_pipe_i' && c.to === 'pRe_pipe_i') || this.conns.some(c => c.from === 'pRe_pipe_i' && c.to === 'stV_pipe_i') } },
-            { msg: "6. 调压阀输出端连接到T型管下端", act: () => { return this.conns.some(c => c.from === 'pRe_pipe_o' && c.to === 'tCo_pipe_l') || this.conns.some(c => c.from === 'tCo_pipe_l' && c.to === 'pRe_pipe_o') } },
-            { msg: "7. T型管上端连接到压力表输入端", act: () => { return this.conns.some(c => c.from === 'tCo_pipe_r' && c.to === 'pGa_pipe_i') || this.conns.some(c => c.from === 'pGa_pipe_i' && c.to === 'tCo_pipe_r') } },
-            { msg: "8. T型管左端连接到变送器气压口", act: () => { return this.conns.some(c => c.from === 'tCo_pipe_u' && c.to === 'pTr_pipe_i') || this.conns.some(c => c.from === 'pTr_pipe_i' && c.to === 'tCo_pipe_u') } },
-            { msg: "9. 按下24V电源键,接通电源", act: () => this.devices['dcP'].isOn === true },
-            { msg: "10. 合上截止阀,变送器气压为0,电流应为4mA.", act: () => this.devices['stV'].isOpen === true && this.devices['pRe'].setPressure === 0 && Math.abs(this.devices['pTr'].getValue() - 4) < 0.1 },
-            { msg: `11. 将压力调节到${0.25 * this.pTransMax}MPa,变送器电流应为8mA.`, act: () => Math.abs(this.devices['pRe'].setPressure - 2.5 * this.pTransMax) < 0.05 && Math.abs(this.devices['pTr'].getValue() - 8) < 0.1 },
-            { msg: `12. 将压力调节到${0.5 * this.pTransMax}MPa,变送器电流应为12mA.`, act: () => Math.abs(this.devices['pRe'].setPressure - 5 * this.pTransMax) < 0.05 && Math.abs(this.devices['pTr'].getValue() - 12) < 0.1 },
-            { msg: `13. 将压力调节到${0.75 * this.pTransMax}MPa,变送器电流应为16mA.`, act: () => Math.abs(this.devices['pRe'].setPressure - 7.5 * this.pTransMax) < 0.05 && Math.abs(this.devices['pTr'].getValue() - 16) < 0.1 },
-            { msg: `14. 将压力调节到${this.pTransMax}MPa,变送器电流应为20mA.`, act: () => Math.abs(this.devices['pRe'].setPressure - 10 * this.pTransMax) < 0.05 && Math.abs(this.devices['pTr'].getValue() - 20) < 0.1 }
-        ];
+        // 确保 workflow 已初始化（仅在未保留或未设置时初始化默认流程）
+        if (!preserveWorkflow || !this.workflow || this.workflow.length === 0) {
+            this.workflow = [
+                { msg: "1. 连接电源正极到负载电阻左端", act: () => { return this.conns.some(c => c.from === 'dcP_wire_p' && c.to === 'pRr_wire_p') || this.conns.some(c => c.from === 'pRr_wire_p' && c.to === 'dcP_wire_p') } },
+                { msg: "2. 连接负载电阻右端到变送器正端", act: () => { return this.conns.some(c => c.from === 'pRr_wire_n' && c.to === 'pTr_wire_p') || this.conns.some(c => c.from === 'pTr_wire_p' && c.to === 'pRr_wire_n') } },
+                { msg: "3. 连接变送器负端到电流表正极", act: () => { return this.conns.some(c => c.from === 'pTr_wire_n' && c.to === 'aGa_wire_p') || this.conns.some(c => c.from === 'aGa_wire_p' && c.to === 'pTr_wire_n') } },
+                { msg: "4. 连接电流表负极到电源负极", act: () => { return this.conns.some(c => c.from === 'aGa_wire_n' && c.to === 'dcP_wire_n') || this.conns.some(c => c.from === 'dcP_wire_n' && c.to === 'aGa_wire_n') } },
+                { msg: "5. 空气瓶出口连接到截止阀右端", act: () => { return this.conns.some(c => c.from === 'caB_pipe_o' && c.to === 'stV_pipe_o') || this.conns.some(c => c.from === 'stV_pipe_o' && c.to === 'caB_pipe_o') } },
+                { msg: "6. 截止阀左端连接到调压阀输入端", act: () => { return this.conns.some(c => c.from === 'stV_pipe_i' && c.to === 'pRe_pipe_i') || this.conns.some(c => c.from === 'pRe_pipe_i' && c.to === 'stV_pipe_i') } },
+                { msg: "7. 调压阀输出端连接到T型管下端", act: () => { return this.conns.some(c => c.from === 'pRe_pipe_o' && c.to === 'tCo_pipe_l') || this.conns.some(c => c.from === 'tCo_pipe_l' && c.to === 'pRe_pipe_o') } },
+                { msg: "8. T型管上端连接到压力表输入端", act: () => { return this.conns.some(c => c.from === 'tCo_pipe_r' && c.to === 'pGa_pipe_i') || this.conns.some(c => c.from === 'pGa_pipe_i' && c.to === 'tCo_pipe_r') } },
+                { msg: "9. T型管左端连接到变送器气压口", act: () => { return this.conns.some(c => c.from === 'tCo_pipe_u' && c.to === 'pTr_pipe_i') || this.conns.some(c => c.from === 'pTr_pipe_i' && c.to === 'tCo_pipe_u') } },
+                { msg: "10. 按下24V电源键,接通电源", act: () => this.devices['dcP'].isOn === true },
+                { msg: "11. 合上截止阀,变送器气压为0,电流应为4mA.", act: () => this.devices['stV'].isOpen === true && this.devices['pRe'].setPressure === 0 && Math.abs(this.devices['pTr'].getValue() - 4) < 0.1 },
+                { msg: `12. 将压力调节到${0.25 * this.pTransMax}MPa,变送器电流应为8mA.`, act: () => Math.abs(this.devices['pRe'].setPressure - 2.5 * this.pTransMax) < 0.05 && Math.abs(this.devices['pTr'].getValue() - 8) < 0.1 },
+                { msg: `13. 将压力调节到${0.5 * this.pTransMax}MPa,变送器电流应为12mA.`, act: () => Math.abs(this.devices['pRe'].setPressure - 5 * this.pTransMax) < 0.05 && Math.abs(this.devices['pTr'].getValue() - 12) < 0.1 },
+                { msg: `14. 将压力调节到${0.75 * this.pTransMax}MPa,变送器电流应为16mA.`, act: () => Math.abs(this.devices['pRe'].setPressure - 7.5 * this.pTransMax) < 0.05 && Math.abs(this.devices['pTr'].getValue() - 16) < 0.1 },
+                { msg: `15. 将压力调节到${this.pTransMax}MPa,变送器电流应为20mA.`, act: () => Math.abs(this.devices['pRe'].setPressure - 10 * this.pTransMax) < 0.05 && Math.abs(this.devices['pTr'].getValue() - 20) < 0.1 }
+            ];
+        }
         const panel = document.createElement('div');
         panel.style.position = 'absolute';
         panel.style.top = '0';
@@ -952,7 +1331,7 @@ export class SimulationEngine {
         this._updateWorkflowUI();
 
         // 关闭按钮
-        panel.querySelector('#wfClose').addEventListener('click', () =>{this.onAction('ui','close'); this.closeWorkflowPanel()});
+        panel.querySelector('#wfClose').addEventListener('click', () => { this.onAction('ui', 'close'); this.closeWorkflowPanel() });
 
         // 开始轮询检查
         this._startWorkflowWatcher();
@@ -1072,10 +1451,11 @@ export class SimulationEngine {
     resetExperiment() {
         // 清空连线
         this.conns = [];
-        // 销毁现有设备图层元素
-        Object.values(this.devices).forEach(dev => {
-            try { if (dev.group) dev.group.destroy(); } catch (e) { }
-        });
+        this.connected = false;
+        this.uiLayer.destroyChildren(); // 清除 UI 元素
+        this.lineLayer.destroyChildren(); // 清除连线
+        this.devLayer.destroyChildren(); // 清除设备图层
+
         this.devices = {};
         this._history = [];
         this._historyIndex = -1;
@@ -1087,59 +1467,96 @@ export class SimulationEngine {
     }
     // 重绘所有连线
     reDrawConnections() {
-        this.lineLayer.destroyChildren();// 清除现有连线
+        this.lineLayer.destroyChildren(); // 清除现有连线
         this.conns.forEach(conn => {
-            const fromTerm = this.stage.findOne('#' + conn.from);// 获取起始端子
-            const toTerm = this.stage.findOne('#' + conn.to);// 获取终止端子
+            const fromTerm = this.stage.findOne('#' + conn.from);
+            const toTerm = this.stage.findOne('#' + conn.to);
+
             const getShapeCenter = (shape) => {
-                // 1. 获取图形自身相对于其坐标原点（通常是左上角）的矩形范围
                 const selfRect = shape.getSelfRect();
-                // 2. 计算出该图形自身的中心点位置
                 const centerX = selfRect.x + selfRect.width / 2;
                 const centerY = selfRect.y + selfRect.height / 2;
-                // 3. 利用绝对变换矩阵，将这个局部中心点转换为舞台（Stage）的绝对坐标
                 const transform = shape.getAbsoluteTransform();
-                const absPos = transform.point({ x: centerX, y: centerY });
-                return absPos;
-            }
-            if (fromTerm && toTerm) {  // 确保端子存在
-                let fromPos = fromTerm.getAbsolutePosition(); // 获取端子在舞台上的绝对位置
-                let toPos = toTerm.getAbsolutePosition(); // 获取端子在舞台上的绝对位置  
-                if (conn.type === 'pipe') { // 如果是气路连线，获取矩形中心位置
+                return transform.point({ x: centerX, y: centerY });
+            };
+
+            if (fromTerm && toTerm) {
+                let fromPos = fromTerm.getAbsolutePosition();
+                let toPos = toTerm.getAbsolutePosition();
+
+                // 1. 判定是否涉及万用表端子
+                const isMuMConn = conn.from.includes('muM') || conn.to.includes('muM');
+                const muMTermId = conn.from.includes('muM') ? conn.from : (conn.to.includes('muM') ? conn.to : null);
+
+                // 2. 颜色与样式配置逻辑
+                let strokeColor;
+                let strokeWidth = conn.type === 'wire' ? 4 : 10;
+                let lineTension = 0; // 默认直线
+                let linePoints = [fromPos.x, fromPos.y, toPos.x, toPos.y];
+                if (conn.type === 'wire') {
+                    if (isMuMConn) {
+                        // 万用表特殊连线逻辑
+                        strokeWidth = 6;
+                        lineTension = 0.4; // 开启贝塞尔曲线效果
+                        // --- 核心修改：万用表表笔线增加中点以触发 tension ---
+                        const midX = (fromPos.x + toPos.x) / 2;
+                        const midY = Math.max(fromPos.y, toPos.y) + 20; // 模拟重力，让中点下垂 30 像素
+
+                        // 重新构造点序列：[起点, 中点, 终点]
+                        linePoints = [fromPos.x, fromPos.y, midX, midY, toPos.x, toPos.y];
+                        // 根据端子功能上色
+                        if (muMTermId.includes('com')) {
+                            strokeColor = '#006400'; // 墨绿色
+                        } else if (muMTermId.includes('v') || muMTermId.includes('ma')) {
+                            strokeColor = '#FF4500'; // 火红色 (OrangeRed)
+                        }
+                    } else {
+                        // 普通导线颜色
+                        strokeColor = this.connected ? '#f42811' : '#ceafac';
+                    }
+                } else if (conn.type === 'pipe') {
+                    // 气路逻辑
                     fromPos = getShapeCenter(fromTerm);
                     toPos = getShapeCenter(toTerm);
+                    linePoints = [fromPos.x, fromPos.y, toPos.x, toPos.y];
+                    strokeColor = ((this.pressureMap[conn.from] !== null) && this.pressureMap[conn.from] > 0) ? '#2765f4' : '#767a7a';
                 }
+
+                // 3. 创建连线
                 const line = new Konva.Line({
-                    points: [fromPos.x, fromPos.y, toPos.x, toPos.y],  // 起点和终点坐标,如果是pipe类型的连线，稍微偏移一下。
-                    stroke: conn.type === 'wire' ? (this.checkCircuit() ? '#f42811' : '#ceafac') : (((this.pressureMap[conn.from] !== null) && this.pressureMap[conn.from] > 0) ? '#2765f4' : '#767a7a'), // 根据类型设置颜色
-                    strokeWidth: conn.type === 'wire' ? 4 : 10, // 线宽
-                    lineCap: 'round', // 根据类型设置线帽样式
-                    lineJoin: 'round', // 连接处样式
+                    points: linePoints,
+                    stroke: strokeColor,
+                    strokeWidth: strokeWidth,
+                    lineCap: 'round',
+                    lineJoin: 'round',
+                    tension: lineTension, // 关键：设置此值大于0即变为贝塞尔曲线
                     shadowBlur: conn.type === 'pipe' ? 4 : 0,
                     shadowColor: '#333'
                 });
-                this.lineLayer.add(line); // 添加连线到连线图层
-                //双击删除连线
+
+                this.lineLayer.add(line);
+
+                // 双击删除连线逻辑
                 line.on('dblclick dbltap', () => {
                     this.conns = this.conns.filter(c => c !== conn);
                     this.reDrawConnections();
                     this.updateAllDevices();
-                    //如果是气路端子，删除连线后恢复端子点击事件
+
                     if (conn.type === 'pipe') {
                         const fromTermShape = this.stage.findOne('#' + conn.from);
                         const toTermShape = this.stage.findOne('#' + conn.to);
-                        fromTermShape.on('mousedown touchstart', () => {
-                            this.onTermClick(fromTermShape);
-                        });
-                        toTermShape.on('mousedown touchstart', () => {
-                            this.onTermClick(toTermShape);
-                        });
+                        const restoreClick = (shape) => {
+                            shape.off('mousedown touchstart');
+                            shape.on('mousedown touchstart', () => this.onTermClick(shape));
+                        };
+                        restoreClick(fromTermShape);
+                        restoreClick(toTermShape);
                     }
                     this._recordSnapshot();
                 });
-            };
+            }
         });
-        this.lineLayer.draw();// 重绘连线图层
+        this.lineLayer.draw();
     }
     //窗口大小改变时，调整舞台大小
     resize() {
@@ -1204,6 +1621,256 @@ export class SimulationEngine {
             };
             requestAnimationFrame(animate);
         });
+    }
+
+    /**
+     * 判定当前连线是否与标准答案完全等效
+     * @returns {boolean}
+     */
+    checkConn() {
+        const target = [
+            { from: 'dcP_wire_p', to: 'pRr_wire_p', type: 'wire' },
+            { from: 'pRr_wire_n', to: 'pTr_wire_p', type: 'wire' },
+            { from: 'aGa_wire_p', to: 'pTr_wire_n', type: 'wire' },
+            { from: 'aGa_wire_n', to: 'dcP_wire_n', type: 'wire' },
+            { from: 'caB_pipe_o', to: 'stV_pipe_o', type: 'pipe' },
+            { from: 'pRe_pipe_i', to: 'stV_pipe_i', type: 'pipe' },
+            { from: 'pRe_pipe_o', to: 'tCo_pipe_l', type: 'pipe' },
+            { from: 'pGa_pipe_i', to: 'tCo_pipe_r', type: 'pipe' },
+            { from: 'pTr_pipe_i', to: 'tCo_pipe_u', type: 'pipe' }
+        ];
+
+        // 1. 如果数量都不对，直接判定失败
+        if (this.conns.length !== target.length) return false;
+
+        // 2. 将用户当前的连线进行归一化处理（内部 from/to 排序）并生成唯一标识字符串
+        const normalize = (conn) => {
+            const [a, b] = [conn.from, conn.to].sort();
+            return `${conn.type}:${a}:${b}`;
+        };
+
+        const currentSet = new Set(this.conns.map(normalize));
+        const targetSet = new Set(target.map(normalize));
+
+        // 3. 检查两个集合是否完全一致
+        if (currentSet.size !== targetSet.size) return false;
+        for (let item of targetSet) {
+            if (!currentSet.has(item)) return false;
+        }
+
+        return true;
+    }
+
+    /** 随机在变送器或压力表的气路端口制造一个漏气点，并打开演练面板 */
+    startLeakDrill() {
+        const candidates = [];
+        const tryPush = (id) => { const term = this.stage.findOne('#' + id); if (term) candidates.push(term); };
+        tryPush('pTr_pipe_i');
+        tryPush('pGa_pipe_i');
+        tryPush('tCo_pipi_l');
+        tryPush('tCo_pipi_r');
+        tryPush('tCo_pipi_u');
+
+        if (candidates.length === 0) {
+            this.showTopInfo('未找到可注入漏点的端口');
+            return;
+        }
+        const idx = Math.floor(Math.random() * candidates.length);
+        const term = candidates[idx];
+        term.setAttr('isLeaking', true);
+        this.updateAllDevices();
+
+        // 设置特定的演练流程
+        this.workflow = [
+            { msg: '1. 接通电路和气路', act: () => this.checkConn() },
+            { msg: '2. 合上电源开关和合上截止阀', act: () => (this.devices['dcP'] && this.devices['dcP'].isOn) && (this.devices['stV'] && this.devices['stV'].isOpen) },
+            { msg: `3. 将压力调节到 ${0.5 * this.pTransMax}MPa，观察漏气现象，判断漏气点 `, act: () => Math.abs((this.devices['pRe'].setPressure) - (5 * this.pTransMax)) < (0.05 * this.pTransMax) },
+            { msg: '4. 使用 Leak Test 工具检测漏气', act: () => (this.devices['leD'] && this.devices['leD'].isEmitting === true) },
+            { msg: '5. 关闭电源和气源', act: () => (this.devices['dcP'] && !this.devices['dcP'].isOn) && (this.devices['stV'] && !this.devices['stV'].isOpen) },
+            {
+                msg: '6. 修复漏气点', act: () => {
+                    const terms = this.getPipeTerminals();
+                    return terms.every(t => !t.getAttr('isLeaking'));
+                }
+            },
+            { msg: '7. 合上电源和气源，确定气压表和变送器读数接近相等', act: () => (this.devices['dcP'] && this.devices['dcP'].isOn) && (this.devices['stV'] && this.devices['stV'].isOpen) && (Math.abs((this.devices['pRe'].setPressure) - (5 * this.pTransMax)) < (0.05 * this.pTransMax)) }
+        ];
+        this.openWorkflowPanel(false, true);
+    }
+
+    startLeakAssessment() {
+        // 评估模式：先注入随机漏点，然后以测试模式打开流程面板
+        const candidates = [];
+        const tryPush = (id) => { const term = this.stage.findOne('#' + id); if (term) candidates.push(term); };
+
+        tryPush('pTr_pipe_i');
+        tryPush('pGa_pipe_i');
+        tryPush('tCo_pipi_l');
+        tryPush('tCo_pipi_r');
+        tryPush('tCo_pipi_u');
+        if (candidates.length === 0) {
+            this.showTopInfo('未找到可注入漏点的端口');
+            return;
+        }
+        const idx = Math.floor(Math.random() * candidates.length);
+        const term = candidates[idx];
+        term.setAttr('isLeaking', true);
+        this.updateAllDevices();
+
+        // 使用与演练相同的步骤，但以测试模式打开（逐步评估）
+        this.workflow = [
+            { msg: '1. 接通电路和气路', act: () => this.checkConn() },
+            { msg: '2. 合上电源开关和合上截止阀', act: () => (this.devices['dcP'] && this.devices['dcP'].isOn) && (this.devices['stV'] && this.devices['stV'].isOpen) },
+            { msg: `3. 将压力调节到 ${0.5 * this.pTransMax}MPa，观察漏气现象，判断漏气点 `, act: () => Math.abs((this.devices['pRe'].setPressure) - (5 * this.pTransMax)) < (0.05 * this.pTransMax) },
+            { msg: '4. 使用 Leak Test 工具检测漏气', act: () => (this.devices['leD'] && this.devices['leD'].isEmitting === true) },
+            { msg: '5. 关闭电源和气源', act: () => (this.devices['dcP'] && !this.devices['dcP'].isOn) && (this.devices['stV'] && !this.devices['stV'].isOpen) },
+            {
+                msg: '6. 修复漏气点', act: () => {
+                    const terms = this.getPipeTerminals();
+                    return terms.every(t => !t.getAttr('isLeaking'));
+                }
+            },
+            { msg: '7. 合上电源和气源，确定气压表和变送器读数接近相等', act: () => (this.devices['dcP'] && this.devices['dcP'].isOn) && (this.devices['stV'] && this.devices['stV'].isOpen) && (Math.abs((this.devices['pRe'].setPressure) - (5 * this.pTransMax)) < (0.05 * this.pTransMax)) }
+        ];
+
+        this.openWorkflowPanel(true, true);
+    }
+
+
+    /** 随机注入断线：两种模式（电源输出接口断线 / 变送器内部断线） */
+    startBreakDrill() {
+        const choices = ['dcP_wire_p', 'pTr_internal'];
+        const pick = choices[Math.floor(Math.random() * choices.length)];
+        if (pick === 'dcP_wire_p') {
+            const term = this.stage.findOne('#dcP_wire_p');
+            if (!term) { this.showTopInfo('找不到电源输出端口'); return; }
+            term.setAttr('isBroken', true);
+            this._break = { type: 'dcP_p', termId: 'dcP_wire_p' };
+        } else {
+            // 变送器内部断线
+            if (this.devices['pTr']) {
+                this.devices['pTr'].isBroken = true;
+                this._break = { type: 'pTr_internal' };
+            }
+        }
+
+        // 设置演练流程（断线演练步骤）
+        this.workflow = [
+            { msg: '1. 接通电路和气路', act: () => this.checkConn() },
+            { msg: '2. 合上电源和截止阀，观察电流表显示为0', act: () => (this.devices['dcP'] && this.devices['dcP'].isOn) && (this.devices['stV'] && this.devices['stV'].isOpen) && (this.devices['aGa'] && Math.abs(this.devices['aGa'].getValue() - 0) < 0.1) },
+            { msg: '3. 关闭气源', act: () => (this.devices['stV'] && !this.devices['stV'].isOpen) },
+            {
+                msg: '4. 用万用表测电压,判断电路端点', act: () => {
+                    // 学员需将万用表表笔接到对应端子，检测显示由 muM 的读数决定
+                    if (!this.devices['muM']) return false;
+                    // 如果是电源断线，muM 测 dcP_wire_p 到 dcP_wire_n 应为 0
+                    if (this._break && this._break.type === 'dcP_p') {
+                        // 只有当万用表连接到 dcP_wire_p 与 dcP_wire_n 时才判断
+
+                        return (this.conns.some(c => (c.from === 'muM_wire_v' && c.to === 'dcP_wire_p') || (c.to === 'muM_wire_v' && c.from === 'dcP_wire_p')) &&
+                            this.conns.some(c => (c.from === 'muM_wire_com' && c.to === 'dcP_wire_n') || (c.to === 'muM_wire_com' && c.from === 'dcP_wire_n')) && (this.devices['dcP'] && this.devices['dcP'].isOn) &&
+                            (this.devices['muM'].mode === 'DCV') &&
+                            Math.abs(this.devices['muM'].getValue() - 0) < 0.5);
+                    }
+                    // 如果是变送器内部断线，万用表可测得变送器 p/n 端电压等于电源电压
+                    if (this._break && this._break.type === 'pTr_internal') {
+                        console.log(this._break.type, this.devices['muM'].mode, this.devices['muM'].getValue(), this.devices['dcP'].getValue());
+                        return (this.conns.some(c => (c.from === 'muM_wire_v' && c.to === 'pTr_wire_p') || (c.to === 'muM_wire_v' && c.from === 'pTr_wire_p')) &&
+                            this.conns.some(c => (c.from === 'muM_wire_com' && c.to === 'pTr_wire_n') || (c.to === 'muM_wire_com' && c.from === 'pTr_wire_n')) && (this.devices['dcP'] && this.devices['dcP'].isOn) &&
+                            (this.devices['muM'].mode === 'DCV')) && Math.abs(this.devices['muM'].getValue() - this.devices['dcP'].getValue()) < 0.5;
+                    }
+                    return false;
+                }
+            },
+            {
+                msg: '5. 关闭电源，修复断线故障', act: () => {
+                    // 判断断线是否已修复
+                    // 兼容性增强：若 this._break 已被清除（例如修复逻辑将其置空），也视为已修复。
+                    if (this.devices['dcP'] && this.devices['dcP'].isOn) return false; // 必须先关闭电源
+                    if (!this._break) return true;
+
+                    if (this._break.type === 'dcP_p') {
+                        const t = this.stage.findOne('#dcP_wire_p');
+                        // 如果端子存在且 isBroken 为 false，则视为修复；若 _break 被外部清除，上面已返回 true
+                        return (t && !t.getAttr('isBroken'));
+                    }
+                    if (this._break.type === 'pTr_internal') {
+                        return this.devices['pTr'] && !this.devices['pTr'].isBroken;
+                    }
+                    return false;
+                }
+            },
+            { msg: '6. 开启电源，确认在无气压输入情况下电流恢复为4mA', act: () => (this.devices['dcP'] && this.devices['dcP'].isOn) && (this.devices['aGa'] && Math.abs(this.devices['aGa'].getValue() - 4) < 0.5) }
+        ];
+
+        this.openWorkflowPanel(false, true);
+    }
+
+    startBreakAssessment() {
+        const choices = ['dcP_wire_p', 'pTr_internal'];
+        const pick = choices[Math.floor(Math.random() * choices.length)];
+        if (pick === 'dcP_wire_p') {
+            const term = this.stage.findOne('#dcP_wire_p');
+            if (!term) { this.showTopInfo('找不到电源输出端口'); return; }
+            term.setAttr('isBroken', true);
+            this._break = { type: 'dcP_p', termId: 'dcP_wire_p' };
+        } else {
+            if (this.devices['pTr']) {
+                this.devices['pTr'].isBroken = true;
+                this._break = { type: 'pTr_internal' };
+            }
+        }
+
+        // 使用与演练相同的步骤，但以评估模式打开
+        this.workflow = [
+            { msg: '1. 接通电路和气路', act: () => this.checkConn() },
+            { msg: '2. 合上电源和截止阀，观察电流表显示为0', act: () => (this.devices['dcP'] && this.devices['dcP'].isOn) && (this.devices['stV'] && this.devices['stV'].isOpen) && (this.devices['aGa'] && Math.abs(this.devices['aGa'].getValue() - 0) < 0.1) },
+            { msg: '3. 关闭气源', act: () => (this.devices['stV'] && !this.devices['stV'].isOpen) },
+            {
+                msg: '4. 用万用表测电压,判断电路断点', act: () => {
+                    // 学员需将万用表表笔接到对应端子，检测显示由 muM 的读数决定
+                    if (!this.devices['muM']) return false;
+                    // 如果是电源断线，muM 测 dcP_wire_p 到 dcP_wire_n 应为 0
+                    if (this._break && this._break.type === 'dcP_p') {
+                        // 只有当万用表连接到 dcP_wire_p 与 dcP_wire_n 时才判断
+
+                        return (this.conns.some(c => (c.from === 'muM_wire_v' && c.to === 'dcP_wire_p') || (c.to === 'muM_wire_v' && c.from === 'dcP_wire_p')) &&
+                            this.conns.some(c => (c.from === 'muM_wire_com' && c.to === 'dcP_wire_n') || (c.to === 'muM_wire_com' && c.from === 'dcP_wire_n')) && (this.devices['dcP'] && this.devices['dcP'].isOn) &&
+                            (this.devices['muM'].mode === 'DCV') &&
+                            Math.abs(this.devices['muM'].getValue() - 0) < 0.5);
+                    }
+                    // 如果是变送器内部断线，万用表可测得变送器 p/n 端电压等于电源电压
+                    if (this._break && this._break.type === 'pTr_internal') {
+                        console.log(this._break.type, this.devices['muM'].mode, this.devices['muM'].getValue(), this.devices['dcP'].getValue());
+                        return (this.conns.some(c => (c.from === 'muM_wire_v' && c.to === 'pTr_wire_p') || (c.to === 'muM_wire_v' && c.from === 'pTr_wire_p')) &&
+                            this.conns.some(c => (c.from === 'muM_wire_com' && c.to === 'pTr_wire_n') || (c.to === 'muM_wire_com' && c.from === 'pTr_wire_n')) && (this.devices['dcP'] && this.devices['dcP'].isOn) &&
+                            (this.devices['muM'].mode === 'DCV')) && Math.abs(this.devices['muM'].getValue() - this.devices['dcP'].getValue()) < 0.5;
+                    }
+                    return false;
+                }
+            },
+            {
+                msg: '5. 关闭电源，修复断线故障', act: () => {
+                    // 判断断线是否已修复
+                    // 兼容性增强：若 this._break 已被清除（例如修复逻辑将其置空），也视为已修复。
+                    if (this.devices['dcP'] && this.devices['dcP'].isOn) return false; // 必须先关闭电源
+                    if (!this._break) return true;
+
+                    if (this._break.type === 'dcP_p') {
+                        const t = this.stage.findOne('#dcP_wire_p');
+                        // 如果端子存在且 isBroken 为 false，则视为修复；若 _break 被外部清除，上面已返回 true
+                        return (t && !t.getAttr('isBroken'));
+                    }
+                    if (this._break.type === 'pTr_internal') {
+                        return this.devices['pTr'] && !this.devices['pTr'].isBroken;
+                    }
+                    return false;
+                }
+            },
+            { msg: '6. 开启电源，确认在无气压输入情况下电流恢复为4mA', act: () => (this.devices['dcP'] && this.devices['dcP'].isOn) && (this.devices['aGa'] && Math.abs(this.devices['aGa'].getValue() - 4) < 0.5) }
+        ];
+
+        this.openWorkflowPanel(true, true);
     }
 
 }

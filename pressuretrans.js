@@ -2,7 +2,7 @@ export class PressureTransmitter {
     constructor(config) {
         this.layer = config.layer;
         this.x = config.x || 210;
-        this.y = config.y || 90;
+        this.y = config.y || 100;
         this.id = config.id || 'pTr';
 
         // 动态尺寸设置：最小宽140, 最小高180
@@ -196,9 +196,13 @@ export class PressureTransmitter {
         this.terminals.push(pipePort);
     }
 
-    setValue(pIn,hasPower){
+    setPower(on) {
+        this.isPowered = on;
+        this.update();
+    }
+
+    setValue(pIn){
         this.inputPressure = pIn;
-        this.isPowered = hasPower;
         this.update();
     }
     getValue(){
