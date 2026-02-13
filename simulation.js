@@ -1760,7 +1760,7 @@ export class SimulationEngine {
             { msg: '2. 合上电源和截止阀，观察电流表显示为0', act: () => (this.devices['dcP'] && this.devices['dcP'].isOn) && (this.devices['stV'] && this.devices['stV'].isOpen) && (this.devices['aGa'] && Math.abs(this.devices['aGa'].getValue() - 0) < 0.1) },
             { msg: '3. 关闭气源', act: () => (this.devices['stV'] && !this.devices['stV'].isOpen) },
             {
-                msg: '4. 用万用表测电压,判断电路端点', act: () => {
+                msg: '4. 用万用表测电阻、电压,判断电路断点', act: () => {
                     // 学员需将万用表表笔接到对应端子，检测显示由 muM 的读数决定
                     if (!this.devices['muM']) return false;
                     // 如果是电源断线，muM 测 dcP_wire_p 到 dcP_wire_n 应为 0
@@ -1827,7 +1827,7 @@ export class SimulationEngine {
             { msg: '2. 合上电源和截止阀，观察电流表显示为0', act: () => (this.devices['dcP'] && this.devices['dcP'].isOn) && (this.devices['stV'] && this.devices['stV'].isOpen) && (this.devices['aGa'] && Math.abs(this.devices['aGa'].getValue() - 0) < 0.1) },
             { msg: '3. 关闭气源', act: () => (this.devices['stV'] && !this.devices['stV'].isOpen) },
             {
-                msg: '4. 用万用表测电压,判断电路断点', act: () => {
+                msg: '4. 用万用表测电阻、电压,判断电路断点', act: () => {
                     // 学员需将万用表表笔接到对应端子，检测显示由 muM 的读数决定
                     if (!this.devices['muM']) return false;
                     // 如果是电源断线，muM 测 dcP_wire_p 到 dcP_wire_n 应为 0
@@ -1872,5 +1872,6 @@ export class SimulationEngine {
 
         this.openWorkflowPanel(true, true);
     }
+
 
 }
